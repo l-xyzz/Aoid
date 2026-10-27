@@ -35,7 +35,7 @@
 ## 举报
 
 遇到滥用、骚扰或其他不可接受的行为，可通过
-[GitHub Issues](https://github.com/l-xyzz/Aoid/issues) 或项目主页公布的联系方式告知维护者。
+[GitHub Issues](https://github.com/l-xyzz/Aoid/issues) 或邮件 **l-xyzz@qq.com** 告知维护者。
 所有投诉都会被及时、公正地审阅与处理，并尊重举报者的隐私与安全。
 
 ## 处理原则

@@ -6,7 +6,7 @@
 **请不要直接开公开 Issue**，改用下面任一方式私下告知：
 
 - 通过 GitHub 的 [Security Advisories](https://github.com/l-xyzz/Aoid/security/advisories/new)（推荐）
-- 或发邮件到项目主页上公布的地址
+- 或发邮件到 **l-xyzz@qq.com**
 
 请在报告里包含：
 
