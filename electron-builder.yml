@@ -1,0 +1,90 @@
+# 打包配置
+#
+# 三种产物，按需选择：
+#   nsis      安装包（含卸载程序，写注册表，开始菜单+桌面快捷方式）
+#   portable  便携版（单文件 exe，双击即用，不写注册表）
+#   （zip 由 scripts/build-local.mjs 额外生成）
+#
+# 只把运行必需的东西塞进发行包：
+#   src/        主进程与界面
+#   vendor/     scrcpy 服务端（约 700KB，会被推送到手机上运行）
+#   resources/  图标
+
+appId: com.aoid.app
+productName: Aoid
+copyright: Copyright © 2026 l-xyzz
+
+directories:
+  output: release
+  buildResources: resources
+
+# 只打包运行需要的文件，源码地图、文档、脚本一律排除
+files:
+  - 'src/**/*'
+  - 'resources/icon.png'
+  - 'package.json'
+  - '!**/*.map'
+  # 「关于」和「隐私」页要直接读取这些文档，必须打进包里
+  - 'README.md'
+  - 'CHANGELOG.md'
+  - 'LICENSE'
+  - 'PRIVACY.md'
+  - 'THIRD-PARTY-NOTICES.md'
+
+# scrcpy 服务端需要在运行时读取，因此放在 asar 之外
+extraResources:
+  - from: vendor/scrcpy-server-v5.0.1
+    to: vendor/scrcpy-server-v5.0.1
+  # 官方 scrcpy 运行组件：音频播放由它负责（务必一起打包）
+  - from: scrcpy-runtime
+    to: scrcpy-runtime
+  # 随包附带 adb，首次运行不必再下载
+  - from: platform-tools
+    to: platform-tools
+    filter:
+      - 'adb.exe'
+      - 'AdbWinApi.dll'
+      - 'AdbWinUsbApi.dll'
+
+asar: true
+compression: maximum
+
+win:
+  target:
+    # 安装包：带卸载程序，普通用户首选
+    - target: nsis
+      arch:
+        - x64
+    # 便携版：免安装，放 U 盘也能跑
+    - target: portable
+      arch:
+        - x64
+  icon: resources/icon.ico
+
+# ---- 安装包 ----
+nsis:
+  # 默认装到当前用户目录（%LOCALAPPDATA%\Programs\Aoid），不需要管理员权限，
+  # 也就不会弹 UAC。这符合「轻量小工具」的定位。
+  oneClick: false
+  perMachine: false
+  allowElevation: true
+  allowToChangeInstallationDirectory: true
+  createDesktopShortcut: true
+  createStartMenuShortcut: true
+  shortcutName: Aoid
+  # 卸载时保留用户数据（设置、历史设备），重新装回来还能接着用。
+  # 想彻底清干净的话，卸载后手动删 %APPDATA%\Aoid。
+  deleteAppDataOnUninstall: false
+  # 安装完成后直接启动
+  runAfterFinish: true
+  # 卸载程序显示名，控制面板里看到的就是这个
+  uninstallDisplayName: Aoid ${version}
+  artifactName: Aoid-${version}-Setup.${ext}
+
+# ---- 便携版 ----
+portable:
+  artifactName: Aoid-${version}-Portable.${ext}
+  unpackDirName: Aoid
+
+# 不做自动更新
+publish: null

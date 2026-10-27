@@ -1,0 +1,60 @@
+FFmpeg 与 LGPL / GPL
+====================
+
+Aoid 分发的 scrcpy-runtime/ 目录内包含以下 FFmpeg 动态库：
+
+    avcodec-61.dll
+    avformat-61.dll
+    avutil-59.dll
+    swresample-5.dll
+
+它们是 scrcpy 官方 Windows 预编译包的一部分，由 scrcpy 使用，
+Aoid 未修改、未重新编译，仅随 scrcpy 一同分发。
+
+FFmpeg 的许可证取决于其构建配置
+--------------------------------
+
+FFmpeg 是一个可配置的项目，同一个版本号可能有不同许可证的构建：
+
+- 默认（未启用 GPL 组件）→ **LGPL v2.1 or later**
+- 启用了 `--enable-gpl`（如 libx264 等）→ **GPL v3 or later**
+
+如何确认你所分发的 DLL 属于哪种
+--------------------------------
+
+在 scrcpy-runtime 目录下运行：
+
+    scrcpy.exe --version
+
+输出中会包含 FFmpeg 的版本与构建配置（`--enable-gpl` 是否出现）。
+
+或查看 scrcpy 发行包内的 LICENSE 说明。
+
+对 Aoid 的影响
+--------------
+
+- **LGPL 构建**：Aoid（MIT）可以随包分发，只需保留本声明并允许替换该库，
+  目前是以独立 DLL 形式分发，满足「可替换」要求。
+- **GPL 构建**：GPL 具有传染性，理论上会要求 Aoid 整体符合 GPL。
+  若你确认所分发的是 GPL 构建，建议改用 LGPL 构建的 FFmpeg，
+  或在项目文档中明确说明该 DLL 的独立许可证边界。
+
+Aoid 采取的措施
+---------------
+
+1. FFmpeg 仅作为 scrcpy 的依赖以**独立动态库**形式存在，未静态链接进 Aoid。
+2. 不修改 FFmpeg 源码，不修改其二进制。
+3. 在 THIRD-PARTY-NOTICES.md 中明确标注其许可证与版权方。
+4. 用户可自行替换 scrcpy-runtime/ 下的 FFmpeg DLL（LGPL 的可替换要求）。
+
+许可证全文
+----------
+
+- LGPL v2.1: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.txt
+- GPL v3:    https://www.gnu.org/licenses/gpl-3.0.txt
+
+（Aoid 仓库未内置全文，因这两份文本较长且项目以 MIT 为主；
+ 分发二进制时请从上述官方地址获取并随包附带。）
+
+FFmpeg 版权：Copyright (c) FFmpeg developers
+来源：https://ffmpeg.org/

@@ -1,0 +1,2119 @@
+/* ==========================================================================
+   Aoid 样式
+   --------------------------------------------------------------------------
+   三栏操作台：左＝设备与操作，中＝手机画面，右＝实时信息与控制。
+   配色只服务状态（连接、提醒、滑杆），深色为默认，浅色用于跟随系统。
+   ========================================================================== */
+
+/* ---------- 主题令牌 ---------- */
+:root,
+[data-theme='dark'] {
+  --底-0: #0b0d10;
+  --底-1: #111419;
+  --底-2: #171b21;
+  --底-3: #1f242c;
+  --底-浮层: #1a1f26;
+
+  --线-弱: rgba(255, 255, 255, 0.06);
+  --线: rgba(255, 255, 255, 0.1);
+  --线-强: rgba(255, 255, 255, 0.18);
+
+  --字-主: #e8eaed;
+  --字-次: #9aa3ad;
+  --字-弱: #646d78;
+
+  --强调: #f5a524;
+  --强调-淡: rgba(245, 165, 36, 0.12);
+  --强调-光: rgba(245, 165, 36, 0.35);
+
+  --绿: #3ddc97;
+  --红: #f2555a;
+
+  --壳-上: #2a2f37;
+  --壳-下: #16191e;
+  --壳-中: #22262d;
+
+  --阴影: 0 24px 60px -18px rgba(0, 0, 0, 0.9);
+  --遮罩: rgba(6, 8, 11, 0.62);
+}
+
+[data-theme='light'] {
+  --底-0: #eef0f3;
+  --底-1: #f7f8fa;
+  --底-2: #ffffff;
+  --底-3: #e8ebef;
+  --底-浮层: #ffffff;
+
+  --线-弱: rgba(15, 23, 42, 0.06);
+  --线: rgba(15, 23, 42, 0.1);
+  --线-强: rgba(15, 23, 42, 0.2);
+
+  --字-主: #16191e;
+  --字-次: #4b5563;
+  --字-弱: #8b95a3;
+
+  --强调: #b06f08;
+  --强调-淡: rgba(176, 111, 8, 0.1);
+  --强调-光: rgba(176, 111, 8, 0.28);
+
+  --绿: #128a5a;
+  --红: #cc3b40;
+
+  --壳-上: #d3d8df;
+  --壳-下: #aab2bd;
+  --壳-中: #c2c8d0;
+
+  --阴影: 0 20px 50px -20px rgba(15, 23, 42, 0.35);
+  --遮罩: rgba(100, 110, 125, 0.35);
+}
+
+:root {
+  --圆-大: 16px;
+  --圆-小: 10px;
+
+  --字体: 'HarmonyOS Sans SC', 'PingFang SC', 'Microsoft YaHei UI', 'Microsoft YaHei',
+    system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --字体-数字: 'JetBrains Mono', 'Cascadia Mono', 'Consolas', ui-monospace, monospace;
+  --缓动: cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  height: 100%;
+  margin: 0;
+  overflow: hidden;
+}
+
+body {
+  background: var(--底-0);
+  color: var(--字-主);
+  font-family: var(--字体);
+  font-size: 13px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  user-select: none;
+  transition: background 0.2s var(--缓动), color 0.2s var(--缓动);
+}
+
+:focus-visible {
+  outline: 2px solid var(--强调);
+  outline-offset: 2px;
+}
+
+button {
+  font: inherit;
+  color: inherit;
+  border: none;
+  background: none;
+  cursor: pointer;
+}
+
+input,
+select {
+  font: inherit;
+  color: inherit;
+}
+
+/* ---------- 窗口骨架 ---------- */
+.窗口 {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  background: radial-gradient(120% 60% at 70% -10%, var(--强调-淡), transparent 60%), var(--底-0);
+}
+
+/* ---------- 标题栏 ---------- */
+.标题栏 {
+  display: flex;
+  align-items: center;
+  height: 44px;
+  flex: none;
+  padding-left: 16px;
+  border-bottom: 1px solid var(--线-弱);
+  -webkit-app-region: drag;
+}
+
+.品牌 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.品牌标识 {
+  width: 17px;
+  height: 17px;
+  stroke: var(--强调);
+  stroke-width: 1.6;
+  fill: none;
+  stroke-linecap: round;
+}
+
+.品牌名 {
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.版本号 {
+  color: var(--字-弱);
+  font-family: var(--字体-数字);
+  font-size: 11px;
+  padding-top: 2px;
+}
+
+.标题栏拖拽区 {
+  flex: 1;
+  height: 100%;
+}
+
+.窗口按钮组 {
+  display: flex;
+  align-items: center;
+  height: 100%;
+  -webkit-app-region: no-drag;
+}
+
+.按钮分隔 {
+  width: 1px;
+  height: 14px;
+  background: var(--线);
+  margin: 0 6px;
+}
+
+.图标按钮 {
+  width: 38px;
+  height: 100%;
+  display: grid;
+  place-items: center;
+  transition: background 0.12s var(--缓动), color 0.12s;
+  color: var(--字-次);
+}
+
+.图标按钮 svg {
+  width: 13px;
+  height: 13px;
+}
+
+.图标按钮:hover {
+  background: var(--底-3);
+  color: var(--字-主);
+}
+
+.图标按钮.关闭:hover {
+  background: #c42b1c;
+  color: #fff;
+}
+
+/* ---------- 主体三栏 ---------- */
+.主体 {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 268px minmax(0, 1fr) 288px;
+  min-height: 0;
+}
+
+.侧栏 {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  background: var(--线-弱);
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.左栏 {
+  border-right: 1px solid var(--线-弱);
+}
+
+.右栏 {
+  border-left: 1px solid var(--线-弱);
+}
+
+.侧栏::-webkit-scrollbar {
+  width: 10px;
+}
+
+.侧栏::-webkit-scrollbar-thumb {
+  background: var(--底-3);
+  border: 3px solid transparent;
+  background-clip: padding-box;
+  border-radius: 5px;
+}
+
+.面板 {
+  background: var(--底-1);
+  padding: 13px 14px 15px;
+  flex: none;
+}
+
+.面板.通知面板 {
+  flex: 1 1 auto;
+  min-height: 140px;
+  display: flex;
+  flex-direction: column;
+}
+
+.面板标题 {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 9px;
+  gap: 8px;
+}
+
+.面板标题 h2 {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--字-次);
+  letter-spacing: 0.04em;
+  /* 标题绝不被压缩：旁边的说明文字太长时应该让它换行，而不是把标题挤成竖排 */
+  flex: none;
+  white-space: nowrap;
+}
+
+.文字按钮 {
+  font-size: 11.5px;
+  color: var(--字-弱);
+  padding: 2px 6px;
+  border-radius: 6px;
+  transition: color 0.15s, background 0.15s;
+}
+
+.文字按钮:hover {
+  color: var(--强调);
+  background: var(--强调-淡);
+}
+
+.链接按钮 {
+  font-size: 11.5px;
+  color: var(--强调);
+  padding: 0;
+  text-align: left;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  text-decoration-color: transparent;
+  transition: text-decoration-color 0.15s;
+}
+
+.链接按钮:hover {
+  text-decoration-color: currentColor;
+}
+
+.小标记 {
+  font-size: 10.5px;
+  color: var(--字-弱);
+  font-family: var(--字体-数字);
+  /* 说明文字可以折行，右对齐，不与标题抢宽度 */
+  flex: 1 1 auto;
+  min-width: 0;
+  text-align: right;
+  line-height: 1.45;
+}
+
+/* ---------- 设备列表 ---------- */
+.设备列表 {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.设备项 {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  width: 100%;
+  padding: 8px 9px;
+  text-align: left;
+  border-radius: var(--圆-小);
+  background: var(--底-2);
+  border: 1px solid transparent;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.设备项:hover {
+  border-color: var(--线-强);
+}
+
+.设备项.选中 {
+  background: var(--强调-淡);
+  border-color: var(--强调-光);
+}
+
+.设备图标 {
+  width: 25px;
+  height: 25px;
+  flex: none;
+  display: grid;
+  place-items: center;
+  border-radius: 7px;
+  background: var(--底-3);
+  color: var(--字-次);
+}
+
+.设备图标 svg {
+  width: 13px;
+  height: 13px;
+}
+
+.设备项.选中 .设备图标 {
+  color: var(--强调);
+}
+
+.设备文字 {
+  min-width: 0;
+  flex: 1;
+}
+
+.设备型号 {
+  font-size: 12.5px;
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.设备序列号 {
+  font-family: var(--字体-数字);
+  font-size: 10.5px;
+  color: var(--字-弱);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.设备状态标记 {
+  flex: none;
+  font-size: 10.5px;
+  color: var(--字-弱);
+}
+
+.设备状态标记.未授权 {
+  color: var(--强调);
+}
+
+/* 空态引导 */
+.空态引导 {
+  padding: 11px;
+  border: 1px dashed var(--线);
+  border-radius: var(--圆-小);
+  background: rgba(127, 127, 127, 0.03);
+}
+
+.空态引导[hidden] {
+  display: none;
+}
+
+.空态标题 {
+  margin: 0 0 4px;
+  font-size: 12.5px;
+  font-weight: 600;
+}
+
+.空态正文 {
+  margin: 0 0 8px;
+  font-size: 11.5px;
+  line-height: 1.65;
+  color: var(--字-次);
+}
+
+/* 环境提示 */
+.环境提示 {
+  margin-top: 9px;
+  padding: 11px;
+  border-radius: var(--圆-小);
+  background: var(--底-2);
+  border: 1px solid var(--线);
+}
+
+.提示标题 {
+  margin: 0 0 5px;
+  font-size: 12.5px;
+  font-weight: 600;
+}
+
+.提示正文 {
+  margin: 0 0 9px;
+  font-size: 11.5px;
+  color: var(--字-次);
+  line-height: 1.6;
+}
+
+.主按钮 {
+  width: 100%;
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: var(--强调);
+  color: #1a1205;
+  font-size: 12.5px;
+  font-weight: 600;
+  transition: filter 0.15s;
+}
+
+.主按钮:hover {
+  filter: brightness(1.08);
+}
+
+.主按钮:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.进度条 {
+  position: relative;
+  margin-top: 9px;
+  height: 20px;
+  border-radius: 6px;
+  background: var(--底-3);
+  overflow: hidden;
+}
+
+.进度填充 {
+  height: 100%;
+  width: 0%;
+  background: var(--强调-光);
+  transition: width 0.2s var(--缓动);
+}
+
+.进度文字 {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  font-size: 10.5px;
+}
+
+/* ---------- 状态面板 ---------- */
+.连接标记 {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 10.5px;
+  color: var(--绿);
+}
+
+.连接标记 i {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+  box-shadow: 0 0 0 3px rgba(61, 220, 151, 0.15);
+}
+
+.连接标记.断开 {
+  color: var(--字-弱);
+}
+
+.连接标记.断开 i {
+  box-shadow: none;
+}
+
+.设备概要 {
+  margin-bottom: 10px;
+}
+
+.设备名称 {
+  font-size: 14.5px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.设备副标 {
+  font-size: 11px;
+  color: var(--字-弱);
+  font-family: var(--字体-数字);
+}
+
+.指标网格 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1px;
+  margin: 0;
+  border-radius: var(--圆-小);
+  overflow: hidden;
+  background: var(--线-弱);
+}
+
+.指标 {
+  padding: 7px 9px;
+  background: var(--底-2);
+}
+
+.指标 dt {
+  font-size: 10px;
+  color: var(--字-弱);
+}
+
+.指标 dd {
+  margin: 1px 0 0;
+  font-size: 12.5px;
+  font-family: var(--字体-数字);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---------- 按键 ---------- */
+.按键网格 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 5px;
+}
+
+.按键 {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  padding: 8px 0;
+  border-radius: 8px;
+  background: var(--底-2);
+  border: 1px solid var(--线-弱);
+  color: var(--字-次);
+  font-size: 12px;
+  transition: background 0.12s, color 0.12s, border-color 0.12s, transform 0.06s;
+}
+
+.按键 kbd {
+  font-family: var(--字体-数字);
+  font-size: 9.5px;
+  padding: 1px 4px;
+  border-radius: 4px;
+  background: var(--底-3);
+  color: var(--字-弱);
+  border: 1px solid var(--线-弱);
+}
+
+.按键:hover {
+  background: var(--底-3);
+  color: var(--字-主);
+  border-color: var(--线-强);
+}
+
+.按键:active {
+  transform: scale(0.97);
+  background: var(--强调-淡);
+  color: var(--强调);
+  border-color: var(--强调-光);
+}
+
+.辅助说明 {
+  margin: 8px 0 0;
+  font-size: 10.5px;
+  color: var(--字-弱);
+  line-height: 1.6;
+}
+
+/* ---------- 文字输入 ---------- */
+.输入行 {
+  display: flex;
+  gap: 6px;
+}
+
+.输入框 {
+  flex: 1;
+  min-width: 0;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: var(--底-2);
+  border: 1px solid var(--线);
+  color: var(--字-主);
+  font-size: 12.5px;
+  user-select: text;
+  transition: border-color 0.15s;
+}
+
+.输入框::placeholder {
+  color: var(--字-弱);
+}
+
+.输入框:focus {
+  border-color: var(--强调-光);
+  outline: none;
+}
+
+.输入框.窄 {
+  flex: 0 0 96px;
+}
+
+.发送按钮 {
+  width: 34px;
+  flex: none;
+  border-radius: 8px;
+  background: var(--底-3);
+  color: var(--字-次);
+  font-size: 15px;
+  transition: background 0.15s, color 0.15s;
+}
+
+.发送按钮:hover {
+  background: var(--强调);
+  color: #1a1205;
+}
+
+/* ---------- 画面区 ---------- */
+.画面区 {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  background: radial-gradient(80% 60% at 50% 40%, rgba(127, 127, 127, 0.05), transparent 70%),
+    var(--底-0);
+}
+
+.舞台 {
+  flex: 1;
+  display: grid;
+  place-items: center;
+  min-height: 0;
+  padding: 20px;
+  overflow: hidden;
+}
+
+.手机壳 {
+  position: relative;
+  border-radius: 26px;
+  padding: 8px;
+  background: linear-gradient(160deg, var(--壳-上), var(--壳-下) 55%, var(--壳-中));
+  box-shadow:
+    0 0 0 1px rgba(0, 0, 0, 0.35),
+    0 0 0 2px rgba(255, 255, 255, 0.04),
+    var(--阴影),
+    0 0 90px -30px var(--强调-光);
+  transition: box-shadow 0.4s var(--缓动), opacity 0.4s var(--缓动), filter 0.4s var(--缓动);
+}
+
+.手机壳.等待中 {
+  opacity: 0.5;
+  filter: saturate(0.5);
+}
+
+.手机壳.已连接 {
+  box-shadow:
+    0 0 0 1px rgba(0, 0, 0, 0.35),
+    0 0 0 2px var(--强调-光),
+    var(--阴影),
+    0 0 110px -26px var(--强调-光);
+}
+
+.画面 {
+  display: block;
+  /* 与触控层、连接中精确对齐：绝对定位 + 明确 left/top + calc 宽高。
+     canvas 是替换元素，用 inset + width:auto 会退回内在尺寸（比外壳还大一圈），
+     所以必须显式写 width/height calc。 */
+  position: absolute;
+  left: 8px;
+  top: 8px;
+  width: calc(100% - 16px);
+  height: calc(100% - 16px);
+  border-radius: 19px;
+  background: #000;
+  /*
+   * 缩放质量：手机画面 1280×2772 缩到约 380px 宽显示（约 30%），
+   * auto 在缩小超过 2 倍时会用低质量插值，画面发糊。
+   * 这里强制开启高质量缩放，是「糊」最直接的解法。
+   */
+  image-rendering: -webkit-optimize-contrast;
+  transform: translateZ(0);
+  backface-visibility: hidden;
+}
+
+/* 触控层：接收鼠标与滚轮 */
+.触控层 {
+  position: absolute;
+  inset: 8px;
+  border-radius: 19px;
+  cursor: grab;
+  touch-action: none;
+}
+
+.触控层.按下中 {
+  cursor: grabbing;
+}
+
+.触控层.禁用 {
+  cursor: default;
+}
+
+.触控脉冲 {
+  position: absolute;
+  width: 34px;
+  height: 34px;
+  margin: -17px 0 0 -17px;
+  border-radius: 50%;
+  border: 1.5px solid var(--强调);
+  background: var(--强调-淡);
+  pointer-events: none;
+  animation: 脉冲 0.42s var(--缓动) forwards;
+}
+
+@keyframes 脉冲 {
+  from {
+    transform: scale(0.45);
+    opacity: 1;
+  }
+  to {
+    transform: scale(1.35);
+    opacity: 0;
+  }
+}
+
+.连接中 {
+  position: absolute;
+  inset: 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  border-radius: 19px;
+  background: var(--遮罩);
+  backdrop-filter: blur(3px);
+  font-size: 12px;
+  color: var(--字-次);
+}
+
+.连接中[hidden] {
+  display: none;
+}
+
+.旋转环 {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  border: 2px solid var(--底-3);
+  border-top-color: var(--强调);
+  animation: 旋转 0.8s linear infinite;
+}
+
+@keyframes 旋转 {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ---------- 状态栏 ---------- */
+.状态栏 {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 32px;
+  padding: 0 16px;
+  border-top: 1px solid var(--线-弱);
+  font-size: 11px;
+  color: var(--字-弱);
+}
+
+.状态项 {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+}
+
+.状态项.右侧 {
+  font-family: var(--字体-数字);
+  font-size: 10.5px;
+}
+
+.状态点 {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--字-弱);
+  transition: background 0.3s, box-shadow 0.3s;
+}
+
+.状态点.在线 {
+  background: var(--绿);
+  box-shadow: 0 0 0 3px rgba(61, 220, 151, 0.14);
+}
+
+.状态点.忙碌 {
+  background: var(--强调);
+  box-shadow: 0 0 0 3px var(--强调-淡);
+  animation: 呼吸 1.2s ease-in-out infinite;
+}
+
+.状态点.异常 {
+  background: var(--红);
+}
+
+@keyframes 呼吸 {
+  50% {
+    opacity: 0.35;
+  }
+}
+
+/* ---------- 正在播放 ---------- */
+.播放信息 {
+  margin-bottom: 10px;
+}
+
+.播放标题 {
+  font-size: 13px;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.播放作者 {
+  font-size: 11.5px;
+  color: var(--字-弱);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.播放控制 {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+}
+
+.播放按钮 {
+  width: 32px;
+  height: 32px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  color: var(--字-次);
+  transition: background 0.15s, color 0.15s;
+}
+
+.播放按钮 svg {
+  width: 15px;
+  height: 15px;
+}
+
+.播放按钮:hover {
+  background: var(--底-3);
+  color: var(--字-主);
+}
+
+.播放按钮.主 {
+  width: 38px;
+  height: 38px;
+  background: var(--底-3);
+  color: var(--字-主);
+}
+
+.播放按钮.主:hover {
+  background: var(--强调);
+  color: #1a1205;
+}
+
+/* ---------- 滑杆 ---------- */
+.滑杆组 {
+  display: flex;
+  flex-direction: column;
+  gap: 11px;
+}
+
+.滑杆 {
+  display: block;
+}
+
+.滑杆头 {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 5px;
+  color: var(--字-次);
+}
+
+.滑杆头 svg {
+  width: 14px;
+  height: 14px;
+  flex: none;
+}
+
+.滑杆名 {
+  font-size: 11.5px;
+}
+
+.滑杆值 {
+  margin-left: auto;
+  font-family: var(--字体-数字);
+  font-size: 11px;
+  color: var(--字-主);
+}
+
+.滑杆 input[type='range'] {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--底-3);
+  outline: none;
+  cursor: pointer;
+}
+
+.滑杆 input[type='range']::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--强调);
+  border: 2px solid var(--底-1);
+  box-shadow: 0 0 0 1px var(--强调-光);
+}
+
+.快捷动作 {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-top: 11px;
+}
+
+.次级按钮 {
+  flex: 1 1 auto;
+  padding: 7px 10px;
+  border-radius: 8px;
+  font-size: 11.5px;
+  color: var(--字-次);
+  background: transparent;
+  border: 1px solid var(--线);
+  transition: border-color 0.15s, color 0.15s;
+  white-space: nowrap;
+}
+
+.次级按钮:hover {
+  color: var(--字-主);
+  border-color: var(--线-强);
+}
+
+.次级按钮:active {
+  color: var(--强调);
+  border-color: var(--强调-光);
+}
+
+/* ---------- 通知列表 ---------- */
+.通知列表 {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  overflow-y: auto;
+  flex: 1 1 auto;
+  min-height: 0;
+  margin-right: -4px;
+  padding-right: 4px;
+}
+
+.通知列表::-webkit-scrollbar {
+  width: 8px;
+}
+
+.通知列表::-webkit-scrollbar-thumb {
+  background: var(--底-3);
+  border-radius: 4px;
+}
+
+.通知空态 {
+  padding: 12px 8px;
+  font-size: 11px;
+  color: var(--字-弱);
+  text-align: center;
+  line-height: 1.6;
+}
+
+.通知项 {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  width: 100%;
+  padding: 8px 9px;
+  text-align: left;
+  border-radius: 9px;
+  background: var(--底-2);
+  border: 1px solid transparent;
+  transition: border-color 0.14s, background 0.14s, transform 0.06s;
+}
+
+.通知项:hover {
+  border-color: var(--线-强);
+  background: var(--底-3);
+}
+
+.通知项:active {
+  transform: scale(0.99);
+}
+
+.通知徽标 {
+  width: 22px;
+  height: 22px;
+  flex: none;
+  display: grid;
+  place-items: center;
+  border-radius: 6px;
+  background: var(--底-3);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--字-次);
+  text-transform: uppercase;
+}
+
+.通知项.高 .通知徽标 {
+  background: var(--强调-淡);
+  color: var(--强调);
+}
+
+.通知正文区 {
+  min-width: 0;
+  flex: 1;
+}
+
+.通知标题行 {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+
+.通知标题 {
+  font-size: 12px;
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+}
+
+.通知时间 {
+  font-size: 9.5px;
+  color: var(--字-弱);
+  font-family: var(--字体-数字);
+  flex: none;
+}
+
+.通知内容 {
+  font-size: 11px;
+  color: var(--字-次);
+  line-height: 1.45;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.通知应用 {
+  font-size: 9.5px;
+  color: var(--字-弱);
+  margin-top: 2px;
+  font-family: var(--字体-数字);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ---------- 轻提示 ---------- */
+.提示层 {
+  position: fixed;
+  left: 50%;
+  bottom: 44px;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 7px;
+  pointer-events: none;
+  z-index: 40;
+}
+
+.提示 {
+  padding: 8px 14px;
+  border-radius: 9px;
+  background: var(--底-浮层);
+  border: 1px solid var(--线);
+  box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.6);
+  font-size: 12px;
+  color: var(--字-主);
+  animation: 提示入 0.22s var(--缓动);
+  max-width: 70vw;
+  text-align: center;
+}
+
+.提示.错误 {
+  border-color: rgba(242, 85, 90, 0.45);
+  color: var(--红);
+}
+
+.提示.成功 {
+  border-color: rgba(61, 220, 151, 0.4);
+}
+
+.提示.离开 {
+  animation: 提示出 0.22s var(--缓动) forwards;
+}
+
+@keyframes 提示入 {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+}
+
+@keyframes 提示出 {
+  to {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+}
+
+/* ---------- 抽屉（设置） ---------- */
+.抽屉遮罩,
+.对话框遮罩 {
+  position: fixed;
+  inset: 0;
+  background: var(--遮罩);
+  z-index: 30;
+  animation: 淡入 0.18s var(--缓动);
+}
+
+.抽屉遮罩[hidden],
+.对话框遮罩[hidden],
+.抽屉[hidden],
+.对话框[hidden] {
+  display: none;
+}
+
+@keyframes 淡入 {
+  from {
+    opacity: 0;
+  }
+}
+
+.抽屉 {
+  position: fixed;
+  top: 44px;
+  right: 0;
+  bottom: 0;
+  width: 620px;
+  max-width: 90vw;
+  background: var(--底-1);
+  border-left: 1px solid var(--线);
+  box-shadow: -20px 0 60px -30px rgba(0, 0, 0, 0.8);
+  z-index: 31;
+  display: flex;
+  flex-direction: column;
+  animation: 抽屉入 0.22s var(--缓动);
+}
+
+@keyframes 抽屉入 {
+  from {
+    transform: translateX(24px);
+    opacity: 0;
+  }
+}
+
+.抽屉头,
+.对话框头 {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--线-弱);
+  flex: none;
+}
+
+.抽屉头 h2,
+.对话框头 h2 {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.抽屉头 .图标按钮,
+.对话框头 .图标按钮 {
+  width: 28px;
+  height: 28px;
+  border-radius: 7px;
+}
+
+.抽屉体 {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 116px 1fr;
+  min-height: 0;
+}
+
+.设置导航 {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 10px 8px;
+  border-right: 1px solid var(--线-弱);
+  background: var(--底-0);
+}
+
+.设置标签 {
+  padding: 8px 10px;
+  border-radius: 8px;
+  text-align: left;
+  font-size: 12px;
+  color: var(--字-次);
+  transition: background 0.14s, color 0.14s;
+}
+
+.设置标签:hover {
+  background: var(--底-2);
+  color: var(--字-主);
+}
+
+.设置标签.选中 {
+  background: var(--强调-淡);
+  color: var(--强调);
+  font-weight: 500;
+}
+
+.设置内容 {
+  padding: 14px 16px;
+  overflow-y: auto;
+}
+
+.设置页[hidden] {
+  display: none;
+}
+
+.设置项 {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 11px 0;
+  border-bottom: 1px solid var(--线-弱);
+}
+
+.设置项:last-child {
+  border-bottom: none;
+}
+
+.设置项文字 {
+  min-width: 0;
+}
+
+.设置项名 {
+  font-size: 12.5px;
+  font-weight: 500;
+}
+
+.设置项说明 {
+  font-size: 11px;
+  color: var(--字-弱);
+  line-height: 1.5;
+  margin-top: 1px;
+}
+
+.设置说明 {
+  font-size: 11.5px;
+  color: var(--字-次);
+  line-height: 1.7;
+  margin: 0 0 12px;
+}
+
+.下拉 {
+  padding: 6px 26px 6px 10px;
+  border-radius: 8px;
+  background: var(--底-2);
+  border: 1px solid var(--线);
+  font-size: 12px;
+  appearance: none;
+  background-image: linear-gradient(45deg, transparent 50%, var(--字-弱) 50%),
+    linear-gradient(135deg, var(--字-弱) 50%, transparent 50%);
+  background-position: calc(100% - 13px) 50%, calc(100% - 8px) 50%;
+  background-size: 5px 5px, 5px 5px;
+  background-repeat: no-repeat;
+  cursor: pointer;
+}
+
+/* 开关 */
+.开关 {
+  position: relative;
+  width: 36px;
+  height: 20px;
+  flex: none;
+  cursor: pointer;
+}
+
+.开关 input {
+  position: absolute;
+  opacity: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  cursor: pointer;
+}
+
+.开关块 {
+  display: block;
+  width: 36px;
+  height: 20px;
+  border-radius: 10px;
+  background: var(--底-3);
+  transition: background 0.16s var(--缓动);
+  position: relative;
+}
+
+.开关块::after {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--字-次);
+  transition: transform 0.16s var(--缓动), background 0.16s;
+}
+
+.开关 input:checked + .开关块 {
+  background: var(--强调-光);
+}
+
+.开关 input:checked + .开关块::after {
+  transform: translateX(16px);
+  background: var(--强调);
+}
+
+/* 文档按钮 */
+.文档按钮 {
+  display: block;
+  width: 100%;
+  padding: 10px 12px;
+  margin-bottom: 7px;
+  border-radius: 9px;
+  text-align: left;
+  font-size: 12px;
+  background: var(--底-2);
+  border: 1px solid var(--线-弱);
+  color: var(--字-主);
+  transition: border-color 0.14s, background 0.14s;
+}
+
+.文档按钮:hover {
+  border-color: var(--线-强);
+  background: var(--底-3);
+}
+
+/* ---------- 快捷键设置 ---------- */
+.快捷键列表 {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  margin-bottom: 12px;
+}
+
+.快捷键行 {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 11px;
+  border-radius: 9px;
+  background: var(--底-2);
+  border: 1px solid var(--线-弱);
+}
+
+.快捷键名 {
+  font-size: 12px;
+  font-weight: 500;
+  flex: none;
+  width: 78px;
+}
+
+.绑定组 {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  flex: 1;
+  min-width: 0;
+}
+
+.绑定标签 {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 6px 3px 8px;
+  border-radius: 6px;
+  background: var(--底-3);
+  border: 1px solid var(--线-弱);
+  font-family: var(--字体-数字);
+  font-size: 10.5px;
+  color: var(--字-主);
+}
+
+.绑定删除 {
+  width: 13px;
+  height: 13px;
+  display: grid;
+  place-items: center;
+  border-radius: 3px;
+  color: var(--字-弱);
+  font-size: 12px;
+  line-height: 1;
+}
+
+.绑定删除:hover {
+  background: var(--红);
+  color: #fff;
+}
+
+.绑定空 {
+  font-size: 11px;
+  color: var(--字-弱);
+  font-style: italic;
+}
+
+.添加绑定 {
+  flex: none;
+  padding: 4px 9px;
+  border-radius: 6px;
+  font-size: 11px;
+  color: var(--强调);
+  border: 1px dashed var(--强调-光);
+  background: var(--强调-淡);
+}
+
+.添加绑定:hover {
+  border-style: solid;
+}
+
+.捕获提示 {
+  position: sticky;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 12px;
+  margin-top: 10px;
+  border-radius: 9px;
+  background: var(--强调-淡);
+  border: 1px solid var(--强调-光);
+  animation: 提示入 0.2s var(--缓动);
+}
+
+.捕获提示[hidden] {
+  display: none;
+}
+
+.捕获提示 p {
+  margin: 0;
+  font-size: 12px;
+  color: var(--强调);
+}
+
+/* ---------- 对话框 ---------- */
+.对话框 {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 560px;
+  max-width: 92vw;
+  max-height: 82vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--底-1);
+  border: 1px solid var(--线);
+  border-radius: var(--圆-大);
+  box-shadow: 0 30px 80px -30px rgba(0, 0, 0, 0.7);
+  z-index: 32;
+  animation: 对话框入 0.2s var(--缓动);
+}
+
+@keyframes 对话框入 {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -48%) scale(0.98);
+  }
+}
+
+.标签栏 {
+  display: flex;
+  gap: 4px;
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--线-弱);
+  flex: none;
+}
+
+.标签 {
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-size: 12px;
+  color: var(--字-次);
+  transition: background 0.14s, color 0.14s;
+}
+
+.标签:hover {
+  background: var(--底-2);
+  color: var(--字-主);
+}
+
+.标签.选中 {
+  background: var(--强调-淡);
+  color: var(--强调);
+  font-weight: 500;
+}
+
+.添加页 {
+  padding: 16px;
+  overflow-y: auto;
+}
+
+.添加页[hidden] {
+  display: none;
+}
+
+.步骤 {
+  margin: 0 0 14px;
+  padding-left: 20px;
+  font-size: 12px;
+  color: var(--字-次);
+  line-height: 1.9;
+}
+
+.已连接提示 {
+  padding: 10px 12px;
+  border-radius: 9px;
+  background: var(--底-2);
+  border: 1px solid var(--线-弱);
+  font-size: 11.5px;
+  color: var(--字-次);
+}
+
+.表单块 {
+  margin-bottom: 16px;
+}
+
+.表单标签 {
+  display: block;
+  font-size: 11.5px;
+  color: var(--字-次);
+  margin-bottom: 7px;
+}
+
+.表单行 {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 7px;
+  align-items: center;
+}
+
+.表单行 .主按钮 {
+  width: auto;
+  padding: 8px 16px;
+  flex: none;
+}
+
+.扫描结果 {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  font-size: 11.5px;
+  color: var(--字-弱);
+  margin-top: 6px;
+}
+
+.扫描项 {
+  padding: 4px 9px;
+  border-radius: 6px;
+  background: var(--底-2);
+  border: 1px solid var(--线-弱);
+  font-family: var(--字体-数字);
+  font-size: 11px;
+  color: var(--字-主);
+  cursor: pointer;
+}
+
+.扫描项:hover {
+  border-color: var(--强调-光);
+  color: var(--强调);
+}
+
+.教程链接列表 {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+/* 文档对话框 */
+.文档对话框 {
+  width: 720px;
+  height: 74vh;
+}
+
+.文档内容 {
+  margin: 0;
+  padding: 16px;
+  overflow: auto;
+  font-family: var(--字体-数字);
+  font-size: 11.5px;
+  line-height: 1.7;
+  color: var(--字-次);
+  white-space: pre-wrap;
+  word-break: break-word;
+  user-select: text;
+}
+
+/* 关于 */
+.关于区块 {
+  margin-bottom: 16px;
+}
+
+.关于名 {
+  font-size: 17px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.关于版本 {
+  font-family: var(--字体-数字);
+  font-size: 11.5px;
+  color: var(--字-弱);
+  margin-bottom: 8px;
+}
+
+.更新结果 {
+  margin: 6px 0 14px;
+  font-size: 11.5px;
+  color: var(--字-次);
+  min-height: 1em;
+}
+
+.关于链接 {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+/* ---------- 自定义工具提示 ---------- */
+[data-tip] {
+  position: relative;
+}
+
+[data-tip]::after {
+  content: attr(data-tip);
+  position: absolute;
+  left: 50%;
+  top: calc(100% + 6px);
+  transform: translateX(-50%);
+  padding: 3px 7px;
+  border-radius: 6px;
+  background: var(--底-浮层);
+  border: 1px solid var(--线);
+  color: var(--字-主);
+  font-size: 10.5px;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.14s var(--缓动);
+  z-index: 50;
+}
+
+[data-tip]:hover::after {
+  opacity: 1;
+  transition-delay: 0.3s;
+}
+
+/* ---------- 窄窗口 ---------- */
+@media (max-width: 1180px) {
+  .主体 {
+    grid-template-columns: 240px minmax(0, 1fr) 256px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}
+
+/* ---------- 声音开关列表 ---------- */
+.开关列表 {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.开关项 {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 8px 0;
+  cursor: pointer;
+}
+
+.开关项 + .开关项 {
+  border-top: 1px solid var(--线-弱);
+}
+
+.开关项文字 {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.开关项名 {
+  font-size: 12px;
+  color: var(--字-主);
+}
+
+.开关项注 {
+  font-size: 10.5px;
+  color: var(--字-弱);
+  margin-top: 1px;
+}
+
+/* 不可用的开关：明确显示禁用，而不是假装能用 */
+.开关项.禁用 {
+  cursor: default;
+  opacity: 0.55;
+}
+
+.开关项.禁用 .开关 input {
+  cursor: default;
+}
+
+/* ---------- 通知图标 ---------- */
+.通知图标 {
+  width: 26px;
+  height: 26px;
+  flex: none;
+  border-radius: 7px;
+  object-fit: cover;
+  background: var(--底-3);
+}
+
+/* 拿不到图标时退化成首字母徽标（复用已有 .通知徽标 样式） */
+
+/* ---------- 调试教程 ---------- */
+.教程步骤 {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-height: 46vh;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.教程步骤 h3 {
+  margin: 6px 0 0;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--字-主);
+}
+
+.教程步骤 p {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.7;
+  color: var(--字-次);
+}
+
+.教程步骤 b {
+  color: var(--字-主);
+  font-weight: 600;
+}
+
+.教程注 {
+  font-size: 11.5px;
+  color: var(--字-弱);
+}
+
+.教程清单 {
+  margin: 0;
+  padding-left: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.教程清单 li {
+  font-size: 11.5px;
+  line-height: 1.65;
+  color: var(--字-次);
+}
+
+.教程步骤 a {
+  color: var(--强调);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+}
+
+/* ---------- 更多功能 ---------- */
+.更多行 {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.更多项 {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.更多名 {
+  font-size: 11px;
+  color: var(--字-弱);
+}
+
+.选择框 {
+  width: 100%;
+  height: 28px;
+  padding: 0 8px;
+  border-radius: 8px;
+  border: 1px solid var(--线-弱);
+  background: var(--底-3);
+  color: var(--字-主);
+  font-size: 11.5px;
+  outline: none;
+}
+
+.选择框:focus {
+  border-color: var(--强调);
+}
+
+.更多按钮行 {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.更多按钮行 .按钮 {
+  flex: 1;
+}
+
+.按钮:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.更多提示 {
+  margin-top: 8px;
+}
+
+/* ---------- 更多功能面板 ---------- */
+.更多行 {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.更多项 {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 8px;
+}
+
+.更多名 {
+  font-size: 11px;
+  color: var(--字-弱);
+}
+
+.选择框 {
+  width: 100%;
+  height: 28px;
+  padding: 0 8px;
+  border-radius: 8px;
+  border: 1px solid var(--线-弱);
+  background: var(--底-3);
+  color: var(--字-主);
+  font-size: 11.5px;
+  outline: none;
+}
+
+.选择框:focus {
+  border-color: var(--强调);
+}
+
+.更多按钮行 {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.更多按钮行 .按钮 {
+  flex: 1;
+  font-size: 11.5px;
+}
+
+.按钮:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+/* ---------- 长按与拖动动效 ---------- */
+/*
+   三种操作各自的视觉反馈：
+     单击 → 脉冲圆点（原有）
+     长按 → 按住 300ms 后出现进度环，转一圈表示"正在长按"
+     拖动 → 从起点拉出一条淡色轨迹线，跟随拖动方向
+   都用 CSS 动画/transform，不阻塞主线程，避免拖动时卡顿。
+*/
+.触控长按 {
+  position: absolute;
+  width: 44px;
+  height: 44px;
+  margin: -22px 0 0 -22px;
+  border-radius: 50%;
+  border: 2px solid var(--强调);
+  border-top-color: transparent;
+  pointer-events: none;
+  animation: 长按旋转 0.9s linear infinite;
+  opacity: 0.9;
+}
+
+@keyframes 长按旋转 {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/*
+  拖动跟随光晕（替代轨迹线）。
+
+  仿 Windows 触控的视觉：一个柔和圆斑跟着指针走，
+  带内白外淡的双层渐变，看起来像手指按在玻璃上。
+  用 transform 做缩放以走合成层，避免拖动时触发重排。
+*/
+.触控光晕 {
+  position: absolute;
+  width: 54px;
+  height: 54px;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  background: radial-gradient(
+    circle,
+    rgba(255, 255, 255, 0.55) 0%,
+    var(--强调-淡) 38%,
+    transparent 70%
+  );
+  box-shadow: 0 0 18px -4px var(--强调);
+  pointer-events: none;
+  opacity: 0.75;
+  will-change: transform, opacity, left, top;
+  transition: opacity 0.12s linear;
+}
+
+/* 拖动中把光标换成抓握状态，和按下区分开 */
+.触控层.拖动中 {
+  cursor: grabbing;
+}
+
+/* ---------- 连接过的设备 ---------- */
+.历史设备 {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--线-弱);
+}
+
+.历史标题 {
+  font-size: 11px;
+  color: var(--字-弱);
+  margin-bottom: 6px;
+}
+
+.历史列表 {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-height: 160px;
+  overflow-y: auto;
+}
+
+.历史项 {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 6px 8px;
+  border-radius: 8px;
+  background: var(--底-2);
+  border: 1px solid var(--线-弱);
+}
+
+.历史文字 {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+
+.历史名 {
+  font-size: 11.5px;
+  color: var(--字-主);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.历史注 {
+  font-size: 10px;
+  color: var(--字-弱);
+}
+
+.历史操作 {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex: none;
+}
+
+.历史在线 {
+  font-size: 10px;
+  color: var(--绿);
+}
+
+.小按钮 {
+  padding: 3px 8px;
+  border-radius: 6px;
+  border: 1px solid var(--线-弱);
+  background: var(--底-3);
+  color: var(--字-次);
+  font-size: 10.5px;
+  cursor: pointer;
+  transition: background 0.14s, color 0.14s;
+}
+
+.小按钮:hover {
+  background: var(--底-4);
+  color: var(--字-主);
+}
+
+.小按钮.危险:hover {
+  background: var(--红);
+  color: #fff;
+}
+/*
+  手动重连按钮：恢复失败后浮在画面中央，
+  因为此时画布可能停在一张旧画面上，必须用明显的浮层引导用户点它。
+*/
+.手动重连按钮 {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 30;
+  padding: 10px 26px;
+  font-size: 13.5px;
+  border-radius: 10px;
+  box-shadow: 0 8px 24px -8px rgba(0, 0, 0, 0.6);
+}

@@ -1,0 +1,55 @@
+name: 问题反馈
+description: 遇到了 bug，或者某个设备/系统上用不了
+title: "[bug] 简要描述问题"
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        感谢反馈。请尽量把下面的信息填完整，没有这些内容很难定位与 USB、编码相关的问题。
+
+        > **本项目处于开发阶段（0.7.x-beta），已知存在较多缺陷。**
+        > 提交前请先看一眼 [已知问题](https://github.com/l-xyzz/Aoid#已知问题)，避免重复。
+  - type: textarea
+    id: 现象
+    attributes:
+      label: 现象
+      description: 发生了什么？界面显示什么？贴一张截图更好。
+      placeholder: 连上设备后画面一直是黑的，状态栏显示「0 fps」。
+    validations:
+      required: true
+  - type: textarea
+    id: 期望
+    attributes:
+      label: 期望的行为
+    validations:
+      required: true
+  - type: input
+    id: 手机
+    attributes:
+      label: 手机型号与系统
+      placeholder: Redmi K90 Ultra / Android 16
+    validations:
+      required: true
+  - type: input
+    id: 电脑
+    attributes:
+      label: 电脑系统
+      placeholder: Windows 11 23H2
+    validations:
+      required: true
+  - type: input
+    id: 版本
+    attributes:
+      label: PhoneDeck 版本
+      description: 窗口左上角显示的版本号
+      placeholder: v0.1.0
+    validations:
+      required: true
+  - type: textarea
+    id: 日志
+    attributes:
+      label: 附加信息
+      description: 如果会开发者工具，可按 Ctrl+Shift+I 打开控制台，把红色报错贴过来。
+    validations:
+      required: false

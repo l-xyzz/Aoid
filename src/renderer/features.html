@@ -1,0 +1,261 @@
+<!doctype html>
+<html lang="zh-CN" data-theme="dark">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; media-src 'self' blob:; connect-src 'self' blob: data:; font-src 'self'"
+    />
+    <title>Aoid 更多功能</title>
+    <link rel="stylesheet" href="./styles/app.css" />
+    <style>
+      /* 独立窗口：整页就是一列卡片，不需要三栏布局 */
+      html,
+      body {
+        height: 100%;
+        margin: 0;
+        background: var(--底-1);
+      }
+
+      .更多页 {
+        height: 100%;
+        box-sizing: border-box;
+        padding: 18px;
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+        overflow-y: auto;
+      }
+
+      .更多页头 {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: 12px;
+      }
+
+      .更多页头 h1 {
+        margin: 0;
+        font-size: 15px;
+        font-weight: 600;
+        color: var(--字-主);
+      }
+
+      .更多页头 .状态 {
+        font-size: 11.5px;
+        color: var(--字-弱);
+      }
+
+      .卡片 {
+        border-radius: 12px;
+        border: 1px solid var(--线-弱);
+        background: var(--底-2);
+        padding: 14px;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+
+      .卡片 h2 {
+        margin: 0;
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--字-主);
+      }
+
+      .卡片说明 {
+        margin: 0;
+        font-size: 11.5px;
+        line-height: 1.65;
+        color: var(--字-弱);
+      }
+
+      .行 {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+      }
+
+      .行 > label {
+        flex: 1;
+        min-width: 130px;
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+        font-size: 11px;
+        color: var(--字-弱);
+      }
+
+      .按钮行 {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+      }
+
+      .按钮行 .按钮 {
+        flex: 1;
+        min-width: 120px;
+      }
+
+      .开关项 {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        cursor: pointer;
+      }
+
+      .开关项文字 {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+        min-width: 0;
+      }
+
+      .开关项名 {
+        font-size: 12px;
+        color: var(--字-主);
+      }
+
+      .开关项注 {
+        font-size: 10.5px;
+        color: var(--字-弱);
+      }
+
+      .开关 {
+        position: relative;
+        flex: none;
+        width: 38px;
+        height: 22px;
+      }
+
+      .开关 input {
+        position: absolute;
+        inset: 0;
+        opacity: 0;
+        margin: 0;
+        cursor: pointer;
+      }
+
+      .开关块 {
+        position: absolute;
+        inset: 0;
+        border-radius: 999px;
+        background: var(--底-4);
+        transition: background 0.18s var(--缓动);
+        pointer-events: none;
+      }
+
+      .开关块::after {
+        content: '';
+        position: absolute;
+        top: 3px;
+        left: 3px;
+        width: 16px;
+        height: 16px;
+        border-radius: 50%;
+        background: #fff;
+        transition: transform 0.18s var(--缓动);
+      }
+
+      .开关 input:checked + .开关块 {
+        background: var(--强调);
+      }
+
+      .开关 input:checked + .开关块::after {
+        transform: translateX(16px);
+      }
+
+      .按钮:disabled {
+        opacity: 0.45;
+        cursor: default;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="更多页">
+      <header class="更多页头">
+        <h1>更多功能</h1>
+        <span class="状态" id="连接状态">未连接设备</span>
+      </header>
+
+      <!-- 摄像头 -->
+      <section class="卡片">
+        <h2>把手机当作摄像头</h2>
+        <p class="卡片说明">
+          打开后手机摄像头会在一张独立小窗里实时显示。
+          其他软件（会议、直播工具）可以通过窗口捕获使用这个画面。
+        </p>
+
+        <div class="行">
+          <label>
+            摄像头
+            <select class="选择框" id="摄像头选择">
+              <option value="">连接后加载…</option>
+            </select>
+          </label>
+          <label>
+            分辨率
+            <select class="选择框" id="摄像头尺寸">
+              <option value="1280x720">1280 × 720</option>
+              <option value="1920x1080">1920 × 1080</option>
+              <option value="640x480">640 × 480</option>
+            </select>
+          </label>
+          <label>
+            帧率
+            <select class="选择框" id="摄像头帧率">
+              <option value="30">30 fps</option>
+              <option value="60">60 fps</option>
+              <option value="15">15 fps</option>
+            </select>
+          </label>
+        </div>
+
+        <label class="开关项">
+          <span class="开关项文字">
+            <span class="开关项名">同时使用手机麦克风</span>
+            <span class="开关项注">手机采到的声音会送到电脑播放</span>
+          </span>
+          <span class="开关">
+            <input type="checkbox" id="使用麦克风" />
+            <span class="开关块"></span>
+          </span>
+        </label>
+
+        <div class="按钮行">
+          <button class="按钮 主" id="打开摄像头">打开摄像头预览</button>
+          <button class="按钮" id="关闭摄像头" disabled>停止</button>
+        </div>
+      </section>
+
+      <!-- 麦克风 -->
+      <section class="卡片">
+        <h2>把手机当作麦克风</h2>
+        <p class="卡片说明">
+          单独把手机麦克风接到电脑。适合手机离你更近、或电脑没有麦克风的情况。
+        </p>
+        <div class="按钮行">
+          <button class="按钮" id="打开麦克风">开始使用手机麦克风</button>
+          <button class="按钮" id="关闭麦克风" disabled>停止</button>
+        </div>
+      </section>
+
+      <p class="卡片说明" id="底部提示">
+        提示：摄像头与麦克风是两条独立通道，可以只开其中一个。
+      </p>
+    </div>
+
+    <script type="module">
+      // 用动态 import 启动，出错时把原因直接显示在页面上，而不是静默失败
+      import('./js/features.js').catch((错误) => {
+        const 页 = document.createElement('pre');
+        页.style.cssText =
+          'position:fixed;left:12px;right:12px;bottom:12px;padding:10px;border-radius:8px;' +
+          'background:#2a1416;color:#ff9aa2;font:11px/1.5 monospace;white-space:pre-wrap;z-index:999';
+        页.textContent = '更多功能页面加载失败：\n' + (错误 && (错误.stack || 错误.message || 错误));
+        document.body.appendChild(页);
+      });
+    </script>
+  </body>
+</html>

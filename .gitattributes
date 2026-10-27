@@ -1,0 +1,48 @@
+# Git 属性配置
+#
+# 作用有两个：
+#   1. 二进制文件标记为 binary，Git 不会尝试做文本 diff/合并，也不会改换行符
+#      （否则 exe 被改动后会损坏）
+#   2. 统一文本文件的换行符，避免 Windows / macOS / Linux 协作时满屏 diff
+
+# ---- 默认：自动检测文本 ----
+* text=auto
+
+# ---- 源码与配置：强制 LF（跨平台一致） ----
+*.js      text eol=lf
+*.mjs     text eol=lf
+*.cjs     text eol=lf
+*.json    text eol=lf
+*.yml     text eol=lf
+*.yaml    text eol=lf
+*.css     text eol=lf
+*.html    text eol=lf
+*.md      text eol=lf
+
+# ---- Windows 脚本：必须 CRLF，否则 cmd 解析出错 ----
+*.bat     text eol=crlf
+*.cmd     text eol=crlf
+*.ps1     text eol=crlf
+
+# ---- 二进制：禁止任何转换 ----
+*.exe     binary
+*.dll     binary
+*.so      binary
+*.dylib   binary
+*.png     binary
+*.ico     binary
+*.jpg     binary
+*.jpeg    binary
+*.gif     binary
+*.ico     binary
+*.icns    binary
+*.zip     binary
+*.7z      binary
+*.jar     binary
+*.pak     binary
+*.bin     binary
+*.dat     binary
+vendor/scrcpy-server-v5.0.1 binary
+
+# ---- 统计语言：把 .mjs 算作 JavaScript ----
+*.mjs linguist-language=JavaScript

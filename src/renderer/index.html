@@ -1,0 +1,532 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; media-src 'self' blob:; connect-src 'self' blob: data:; font-src 'self'"
+    />
+    <title>Aoid</title>
+    <link rel="stylesheet" href="./styles/app.css" />
+    <!-- Markdown 文档样式单独一份，避免 app.css 继续膨胀 -->
+    <link rel="stylesheet" href="./styles/markdown.css" />
+  </head>
+  <body data-theme="dark">
+    <div class="窗口">
+      <!-- 自定义标题栏：可拖动，右侧是窗口按钮 -->
+      <header class="标题栏">
+        <div class="品牌">
+          <svg class="品牌标识" viewBox="0 0 24 24" aria-hidden="true">
+            <rect x="6.5" y="2.5" width="11" height="19" rx="3" />
+            <path d="M10.5 5.5h3" />
+            <circle cx="12" cy="18" r="1" />
+          </svg>
+          <span class="品牌名">Aoid</span>
+          <span class="版本号" id="版本号"></span>
+        </div>
+
+        <div class="标题栏拖拽区"></div>
+
+        <div class="窗口按钮组">
+          <button class="图标按钮" id="设置按钮" data-tip="设置" aria-label="设置">
+            <!--
+              标准齿轮图标：外圈八个齿 + 中间圆孔。
+              之前那版是「圆圈 + 放射线」，看起来像太阳/亮度调节，容易误会。
+              这里用带齿的闭合路径，一眼就是设置。
+            -->
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.25" stroke-linejoin="round">
+              <path d="M6.8 1.5h2.4l.34 1.62a5.2 5.2 0 0 1 1.22.7l1.55-.55 1.2 2.08-1.2 1.13c.06.28.09.57.09.87s-.03.59-.09.87l1.2 1.13-1.2 2.08-1.55-.55a5.2 5.2 0 0 1-1.22.7L9.2 13.2H6.8l-.34-1.62a5.2 5.2 0 0 1-1.22-.7l-1.55.55-1.2-2.08 1.2-1.13A5.4 5.4 0 0 1 3.6 7.35c0-.3.03-.59.09-.87L2.49 5.35l1.2-2.08 1.55.55a5.2 5.2 0 0 1 1.22-.7L6.8 1.5Z" />
+              <circle cx="8" cy="7.35" r="1.85" />
+            </svg>
+          </button>
+          <button class="图标按钮" id="添加设备按钮" data-tip="添加设备" aria-label="添加设备">
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round">
+              <path d="M8 3v10M3 8h10" />
+            </svg>
+          </button>
+          <span class="按钮分隔"></span>
+          <button class="图标按钮" id="最小化" data-tip="最小化" aria-label="最小化">
+            <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.2"><path d="M2 6h8" /></svg>
+          </button>
+          <button class="图标按钮" id="最大化" data-tip="最大化" aria-label="最大化">
+            <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.2"><rect x="2.5" y="2.5" width="7" height="7" rx="1" /></svg>
+          </button>
+          <button class="图标按钮 关闭" id="关闭" data-tip="关闭" aria-label="关闭">
+            <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.2"><path d="M3 3l6 6M9 3l-6 6" /></svg>
+          </button>
+        </div>
+      </header>
+
+      <main class="主体">
+        <!-- ============ 左栏：设备与快捷操作 ============ -->
+        <aside class="侧栏 左栏">
+          <section class="面板">
+            <div class="面板标题">
+              <h2>设备</h2>
+              <button class="文字按钮" id="刷新设备">刷新</button>
+            </div>
+
+            <!--
+              在线设备与连接过的设备合并成一张列表：
+              每行都显示名称 + 副标题（在线显示序列号，离线显示连接方式和时间），
+              在线的那台直接点就是「使用中」，离线的提供「重连」与「删除」。
+            -->
+            <div class="设备列表" id="设备列表"></div>
+
+            <div class="空态引导" id="空态引导">
+              <p class="空态标题" id="空态标题">用 USB 线连接手机</p>
+              <p class="空态正文" id="空态正文">
+                在手机上打开「开发者选项 → USB 调试」，插线后点「允许」。左侧会立刻出现这台设备。
+              </p>
+              <button class="链接按钮" id="教程链接">不同品牌怎么打开 USB 调试？</button>
+            </div>
+
+            <div class="环境提示" id="环境提示" hidden>
+              <p class="提示标题">还没有找到 adb</p>
+              <p class="提示正文">Aoid 需要一个 adb（约 8MB）才能与手机通信。</p>
+              <button class="主按钮" id="下载adb">下载 adb</button>
+              <div class="进度条" id="下载进度" hidden>
+                <div class="进度填充" id="进度填充"></div>
+                <span class="进度文字" id="进度文字"></span>
+              </div>
+            </div>
+          </section>
+
+          <section class="面板" id="信息面板" hidden>
+            <div class="面板标题">
+              <h2>状态</h2>
+              <span class="连接标记" id="连接标记"><i></i>已连接</span>
+            </div>
+
+            <div class="设备概要">
+              <div class="设备名称" id="设备名称">—</div>
+              <div class="设备副标" id="设备副标">—</div>
+            </div>
+
+            <dl class="指标网格">
+              <div class="指标"><dt>电量</dt><dd id="指标电量">—</dd></div>
+              <div class="指标"><dt>帧率</dt><dd id="指标帧率">—</dd></div>
+              <div class="指标"><dt>分辨率</dt><dd id="指标分辨率">—</dd></div>
+              <div class="指标"><dt>延迟</dt><dd id="指标延迟">—</dd></div>
+            </dl>
+          </section>
+
+          <section class="面板 快捷键面板">
+            <div class="面板标题">
+              <h2>快捷键</h2>
+              <button class="文字按钮" id="打开快捷键设置">自定义</button>
+            </div>
+            <div class="按键网格">
+              <button class="按键" data-act="back"><kbd>Esc</kbd>返回</button>
+              <button class="按键" data-act="home"><kbd>中键</kbd>主页</button>
+              <button class="按键" data-act="task"><kbd>Tab</kbd>任务</button>
+              <button class="按键" data-act="rotate">旋转</button>
+              <button class="按键" data-act="notif">通知栏</button>
+              <button class="按键" data-act="settings">控制中心</button>
+            </div>
+            <p class="辅助说明">快捷键只在窗口获得焦点时生效，会覆盖原本的按键操作。</p>
+          </section>
+
+          <section class="面板">
+            <div class="面板标题"><h2>文字输入</h2></div>
+            <form class="输入行" id="文字表单">
+              <input
+                type="text"
+                id="文字输入"
+                class="输入框"
+                placeholder="回车发送到手机输入框"
+                autocomplete="off"
+                spellcheck="false"
+              />
+              <button type="submit" class="发送按钮" aria-label="发送">→</button>
+            </form>
+            <p class="辅助说明">直接投递到手机当前聚焦的输入框；没有输入框时会自动复制到剪贴板。</p>
+          </section>
+        </aside>
+
+        <!-- ============ 中间：手机画面 ============ -->
+        <section class="画面区">
+          <div class="舞台" id="舞台">
+            <div class="手机壳" id="手机壳">
+              <canvas id="画布" class="画面" width="590" height="1280"></canvas>
+              <div class="触控层" id="触控层"></div>
+
+              <div class="连接中" id="连接中" hidden>
+                <div class="旋转环"></div>
+                <span id="连接中文字">正在建立通道</span>
+              </div>
+
+              <!-- 恢复失败后出现：给用户一个明确的重连入口 -->
+              <button class="主按钮 手动重连按钮" id="手动重连" hidden>手动重连</button>
+              </div>
+            </div>
+
+          <footer class="状态栏">
+            <div class="状态项">
+              <span class="状态点" id="状态点"></span>
+              <span id="状态文字">未连接设备</span>
+            </div>
+            <div class="状态项 右侧">
+              <span id="提示文字"></span>
+            </div>
+          </footer>
+        </section>
+
+        <!-- ============ 右栏：实时信息与控制 ============ -->
+        <aside class="侧栏 右栏">
+          <!-- 正在播放 -->
+          <section class="面板" id="播放面板" hidden>
+            <div class="面板标题">
+              <h2>正在播放</h2>
+              <span class="小标记" id="播放来源">—</span>
+            </div>
+            <div class="播放信息">
+              <div class="播放标题" id="播放标题">—</div>
+              <div class="播放作者" id="播放作者">—</div>
+            </div>
+            <div class="播放控制">
+              <button class="播放按钮" data-media="previous" aria-label="上一首">
+                <svg viewBox="0 0 16 16" fill="currentColor"><path d="M4 3h1.6v10H4zM13 3v10L6.2 8z" /></svg>
+              </button>
+              <button class="播放按钮 主" data-media="toggle" aria-label="播放/暂停">
+                <svg id="播放图标" viewBox="0 0 16 16" fill="currentColor"><path d="M5 3l8 5-8 5z" /></svg>
+              </button>
+              <button class="播放按钮" data-media="next" aria-label="下一首">
+                <svg viewBox="0 0 16 16" fill="currentColor"><path d="M12 3h-1.6v10H12zM3 3v10l6.8-5z" /></svg>
+              </button>
+            </div>
+          </section>
+
+
+          <!-- 更多功能：点一下弹出独立窗口，不在右栏展开 -->
+          <section class="面板" id="更多面板">
+            <div class="面板标题">
+              <h2>更多功能</h2>
+              <span class="小标记" id="更多状态">—</span>
+            </div>
+            <p class="设置说明">把手机当作电脑的摄像头和麦克风。</p>
+            <button class="按钮 主 宽按钮" id="打开更多窗口">打开控制面板</button>
+          </section>
+
+          <!-- 声音输出：电脑播放时手机会自动静音 -->
+          <section class="面板" id="声音面板">
+            <div class="面板标题">
+              <h2>声音</h2>
+              <span class="小标记" id="声音说明">—</span>
+            </div>
+
+            <label class="开关项" id="电脑发声项">
+              <span class="开关项文字">
+                <span class="开关项名">在电脑上播放声音</span>
+                <span class="开关项注">开启后手机自动静音</span>
+              </span>
+              <span class="开关">
+                <input type="checkbox" id="电脑发声开关" />
+                <span class="开关块"></span>
+              </span>
+            </label>
+          </section>
+          <!-- 音量与亮度 -->
+          <section class="面板">
+            <div class="面板标题">
+              <h2>控制</h2>
+              <button class="文字按钮" id="刷新状态">刷新</button>
+            </div>
+
+            <div class="滑杆组">
+              <label class="滑杆">
+                <span class="滑杆头">
+                  <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3" aria-hidden="true">
+                    <path d="M3 6v4h2.5L9 13V3L5.5 6z" stroke-linejoin="round" />
+                    <path d="M11 5.5a3.5 3.5 0 0 1 0 5" stroke-linecap="round" />
+                  </svg>
+                  <span class="滑杆名">音量</span>
+                  <span class="滑杆值" id="音量值">—</span>
+                </span>
+                <input type="range" id="音量滑杆" min="0" max="100" value="50" />
+              </label>
+
+              <label class="滑杆">
+                <span class="滑杆头">
+                  <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3" aria-hidden="true">
+                    <circle cx="8" cy="8" r="3" />
+                    <path d="M8 1.5v1.8M8 12.7v1.8M1.5 8h1.8M12.7 8h1.8M3.4 3.4l1.3 1.3M11.3 11.3l1.3 1.3M12.6 3.4l-1.3 1.3M4.7 11.3l-1.3 1.3" stroke-linecap="round" />
+                  </svg>
+                  <span class="滑杆名">亮度</span>
+                  <span class="滑杆值" id="亮度值">—</span>
+                </span>
+                <input type="range" id="亮度滑杆" min="0" max="100" value="100" />
+              </label>
+            </div>
+
+            <div class="快捷动作">
+              <button class="次级按钮" id="保存截图">保存截图</button>
+              <button class="次级按钮" id="复制截图">复制画面</button>
+            </div>
+          </section>
+
+        </aside>
+      </main>
+
+      <!-- 轻提示 -->
+      <div class="提示层" id="提示层" aria-live="polite"></div>
+
+      <!-- ============ 设置抽屉 ============ -->
+      <div class="抽屉遮罩" id="设置遮罩" hidden></div>
+      <aside class="抽屉" id="设置抽屉" hidden aria-label="设置">
+        <header class="抽屉头">
+          <h2>设置</h2>
+          <button class="图标按钮" id="关闭设置" aria-label="关闭设置">
+            <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.2"><path d="M3 3l6 6M9 3l-6 6" /></svg>
+          </button>
+        </header>
+
+        <div class="抽屉体">
+          <nav class="设置导航">
+            <button class="设置标签 选中" data-tab="通用">通用</button>
+            <button class="设置标签" data-tab="快捷键">快捷键</button>
+            <button class="设置标签" data-tab="隐私">隐私</button>
+            <button class="设置标签" data-tab="关于">关于</button>
+          </nav>
+
+          <div class="设置内容">
+            <!-- 通用 -->
+            <section class="设置页" data-page="通用">
+              <div class="设置项">
+                <div class="设置项文字">
+                  <div class="设置项名">语言</div>
+                  <div class="设置项说明">界面显示语言</div>
+                </div>
+                <select id="语言选择" class="下拉">
+                  <option value="zh-CN">简体中文</option>
+                </select>
+              </div>
+
+              <div class="设置项">
+                <div class="设置项文字">
+                  <div class="设置项名">外观</div>
+                  <div class="设置项说明">默认跟随系统</div>
+                </div>
+                <select id="主题选择" class="下拉">
+                  <option value="system">跟随系统</option>
+                  <option value="light">浅色</option>
+                  <option value="dark">深色</option>
+                </select>
+              </div>
+
+              <div class="设置项">
+                <div class="设置项文字">
+                  <div class="设置项名">剪贴板同步</div>
+                  <div class="设置项说明">手机复制内容时同步到电脑，反之亦然</div>
+                </div>
+                <label class="开关">
+                  <input type="checkbox" id="剪贴板同步开关" />
+                  <span class="开关块"></span>
+                </label>
+              </div>
+            </section>
+
+            <!-- 快捷键 -->
+            <section class="设置页" data-page="快捷键" hidden>
+              <p class="设置说明">
+                每个操作可以绑定多个触发方式。点击「添加」后，直接按下想用的键或用鼠标点一下。
+                绑定生效时会覆盖该位置原本的按键操作，且只在 Aoid 窗口获得焦点时起作用。
+              </p>
+
+              <div class="快捷键列表" id="快捷键列表"></div>
+
+              <button class="次级按钮" id="快捷键恢复默认">恢复默认绑定</button>
+
+              <div class="捕获提示" id="捕获提示" hidden>
+                <p>请按下要绑定的键，或点击鼠标按键…</p>
+                <button class="文字按钮" id="取消捕获">取消</button>
+              </div>
+            </section>
+
+            <!-- 隐私 -->
+            <section class="设置页" data-page="隐私" hidden>
+              <p class="设置说明">
+                Aoid 只在你的电脑上运行，不连接任何服务器，也不收集任何数据。
+                所有数据都保存在本机，删掉应用即彻底清除。
+              </p>
+              <button class="文档按钮" data-doc="PRIVACY">查看隐私政策</button>
+              <button class="文档按钮" data-doc="LICENSE">查看开源协议（MIT）</button>
+              <button class="文档按钮" data-doc="THIRDPARTY">第三方组件声明</button>
+            </section>
+
+            <!-- 关于 -->
+            <section class="设置页" data-page="关于" hidden>
+              <div class="关于区块">
+                <div class="关于名">Aoid</div>
+                <div class="关于版本" id="关于版本">—</div>
+                <p class="设置说明">
+                  基于 scrcpy 服务端的电脑控制手机工具。画面与触控走 USB，
+                  不收集数据、不需要在手机上装应用。
+                </p>
+              </div>
+
+              <button class="文档按钮" id="检查更新">检查更新</button>
+              <p class="更新结果" id="更新结果"></p>
+
+              <div class="关于小节标题">项目</div>
+              <button class="文档按钮 主入口" data-link="https://github.com/l-xyzz/Aoid">
+                项目主页（GitHub）
+              </button>
+
+              <div class="关于小节标题">文档</div>
+              <div class="关于链接">
+                <button class="链接按钮" data-doc="README">使用说明</button>
+                <button class="链接按钮" data-doc="CHANGELOG">更新记录</button>
+                <button class="链接按钮" data-doc="LICENSE">开源协议</button>
+                <button class="链接按钮" data-doc="PRIVACY">隐私政策</button>
+                <button class="链接按钮" data-doc="THIRDPARTY">第三方声明</button>
+              </div>
+
+              <div class="关于小节标题">致谢</div>
+              <div class="关于链接">
+                <button class="链接按钮" data-link="https://github.com/Genymobile/scrcpy">scrcpy</button>
+                <button class="链接按钮" data-link="https://www.electronjs.org/">Electron</button>
+              </div>
+            </section>
+          </div>
+        </div>
+      </aside>
+
+      <!-- ============ 添加设备对话框 ============ -->
+      <div class="对话框遮罩" id="添加设备遮罩" hidden></div>
+      <div class="对话框" id="添加设备对话框" hidden aria-label="添加设备">
+        <header class="对话框头">
+          <h2>添加设备</h2>
+          <button class="图标按钮" id="关闭添加设备" aria-label="关闭">
+            <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.2"><path d="M3 3l6 6M9 3l-6 6" /></svg>
+          </button>
+        </header>
+
+        <nav class="标签栏">
+          <button class="标签 选中" data-mode="usb">USB 连接</button>
+          <button class="标签" data-mode="无线">无线连接</button>
+          <button class="标签" data-mode="教程">调试教程</button>
+        </nav>
+
+        <!-- USB -->
+        <div class="添加页" data-page="usb">
+          <ol class="步骤">
+            <li>在手机上打开「设置 → 关于手机」，连点「版本号」7 次开启开发者选项</li>
+            <li>进入「开发者选项」，打开「USB 调试」</li>
+            <li>用数据线连接电脑，手机上弹出授权窗口时点「允许」</li>
+          </ol>
+          <div class="已连接提示" id="usb状态">插上数据线后，设备会自动出现在左侧列表</div>
+        </div>
+
+        <!-- 无线 -->
+        <div class="添加页" data-page="无线" hidden>
+          <div class="表单块">
+            <label class="表单标签">方式一：配对码配对（Android 11 及以上的「无线调试」）</label>
+            <div class="表单行">
+              <input class="输入框" id="配对地址" placeholder="手机上的 IP 地址和端口，如 192.168.1.8:37000" />
+              <input class="输入框 窄" id="配对码" placeholder="6 位配对码" maxlength="6" />
+            </div>
+            <button class="主按钮" id="执行配对">配对</button>
+          </div>
+
+          <div class="表单块">
+            <label class="表单标签">方式二：直接连接已配对设备</label>
+            <div class="表单行">
+              <input class="输入框" id="连接地址" placeholder="192.168.1.8:5555" />
+              <button class="次级按钮" id="执行连接">连接</button>
+            </div>
+            <div class="表单行">
+              <button class="文字按钮" id="扫描局域网">扫描局域网设备</button>
+              <button class="文字按钮" id="转为无线">把当前 USB 设备转为无线</button>
+            </div>
+            <div class="扫描结果" id="扫描结果"></div>
+          </div>
+
+          <div class="表单块">
+            <label class="表单标签">历史设备</label>
+            <div class="扫描结果" id="历史设备">暂无</div>
+          </div>
+        </div>
+
+        <!-- 教程：一篇通用说明，覆盖几乎所有品牌 -->
+        <div class="添加页" data-page="教程" hidden>
+          <p class="设置说明">
+            绝大多数安卓手机开 USB 调试都是同一条路，只有「版本号」的位置因品牌而异。
+            下面按步骤来，找到你手机品牌对应的那一行即可。
+          </p>
+
+          <div class="教程步骤">
+            <h3>第 1 步：打开开发者选项</h3>
+            <p>进入「设置 → 关于手机」，连续点击<b>版本号</b> 7 次，直到提示「您已处于开发者模式」。</p>
+            <p class="教程注">版本号在各家系统里的位置（设置 → 关于手机 之下）：</p>
+            <ul class="教程清单">
+              <li><b>小米 / Redmi</b>：全部参数与信息 → MIUI 版本（澎湃 OS 为「OS 版本」）</li>
+              <li><b>华为 / 荣耀</b>：关于手机 → 版本号</li>
+              <li><b>OPPO / 一加 / realme</b>：关于设备 → 版本号</li>
+              <li><b>vivo / iQOO</b>：关于手机 → 软件版本号</li>
+              <li><b>三星</b>：关于手机 → 软件信息 → 版本号</li>
+              <li><b>Pixel / 原生安卓</b>：关于手机 → 版本号</li>
+              <li><b>魅族</b>：关于手机 → 版本号</li>
+              <li><b>中兴 / 努比亚</b>：关于手机 → 版本号</li>
+            </ul>
+
+            <h3>第 2 步：打开 USB 调试</h3>
+            <p>回到「设置 → 系统 → 开发者选项」（部分机型在「设置 → 更多设置」里），
+              找到 <b>USB 调试</b>，打开它。</p>
+            <p class="教程注">Android 8 及更早版本在「设置 → 开发者选项」；Android 9 及以上在「系统」里面。</p>
+
+            <h3>第 3 步：连接电脑并授权</h3>
+            <p>用数据线连接电脑，手机会弹出「允许 USB 调试吗」，勾选「一律允许」后点确定。
+              如果没弹窗，拔插一次数据线，或换一根<b>能传数据</b>的线（充电线常常不行）。</p>
+
+            <h3>常见问题</h3>
+            <ul class="教程清单">
+              <li><b>找不到开发者选项</b>：版本号没点够，再多点几次；个别定制系统要先登录账号。</li>
+              <li><b>连上了但显示「未授权」</b>：在手机上重新确认授权，或到开发者选项里点「撤销 USB 调试授权」再插一次。</li>
+              <li><b>小米 / 红米插线只充电</b>：下拉通知栏，把 USB 用途从「仅充电」改成「传输文件」。</li>
+              <li><b>华为 / 荣耀</b>：需要在开发者选项里同时打开「仅充电模式下允许 ADB 调试」。</li>
+              <li><b>vivo / OPPO</b>：部分机型要求先登录厂商账号才能开启。</li>
+              <li><b>公司或学校发的手机</b>：可能被管理策略禁用，无法自行开启。</li>
+            </ul>
+
+            <p class="设置说明">
+              以上步骤来自 Android 官方文档（<a href="https://developer.android.google.cn/studio/debug/dev-options?hl=zh-cn" data-link="https://developer.android.google.cn/studio/debug/dev-options?hl=zh-cn">配置设备上的开发者选项</a>），
+              品牌差异部分按各家系统整理。
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- ============ 文档查看器 ============ -->
+      <div class="对话框遮罩" id="文档遮罩" hidden></div>
+      <div class="对话框 文档对话框" id="文档对话框" hidden aria-label="文档">
+        <header class="对话框头">
+          <h2 id="文档标题">文档</h2>
+          <button class="图标按钮" id="关闭文档" aria-label="关闭">
+            <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.2"><path d="M3 3l6 6M9 3l-6 6" /></svg>
+          </button>
+        </header>
+        <!-- Markdown 渲染结果：用 div 而非 pre，内部由 markdown.js 生成结构 -->
+        <div class="文档内容 md-body" id="文档内容"></div>
+      </div>
+    </div>
+
+    <!--
+      用内联模块 + 动态 import 启动，而不是直接给 <script type="module" src>：
+      后者在被浏览器静默跳过时（例如加载顺序或缓存问题）不会产生任何报错，
+      界面会完全没反应、极难排查。动态 import 的失败会被我们捕获并显示出来。
+    -->
+    <script type="module">
+      const 显示启动错误 = (错误) => {
+        const 页 = document.createElement('pre');
+        页.style.cssText =
+          'position:fixed;left:16px;bottom:16px;right:16px;padding:12px;border-radius:10px;' +
+          'background:#2a1416;color:#ff9aa2;font:12px/1.6 monospace;white-space:pre-wrap;z-index:999';
+        页.textContent = '界面脚本加载失败：\n' + (错误 && (错误.stack || 错误.message || 错误));
+        document.body.appendChild(页);
+      };
+
+      import('./js/app.js').catch(显示启动错误);
+    </script>
+  </body>
+</html>

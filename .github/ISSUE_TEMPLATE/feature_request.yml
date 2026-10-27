@@ -1,0 +1,19 @@
+name: 功能建议
+description: 希望 PhoneDeck 增加什么能力
+title: "[feat] 简要描述"
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: 场景
+    attributes:
+      label: 你想完成什么
+      description: 描述使用场景，而不是直接给出实现方案。
+    validations:
+      required: true
+  - type: textarea
+    id: 现状
+    attributes:
+      label: 现在是怎么做的
+      description: 如果有替代方案，说说现在是怎么凑合的。
+    validations:
+      required: false

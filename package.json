@@ -1,0 +1,40 @@
+{
+    "name": "Aoid",
+    "productName": "Aoid",
+    "version": "0.7.0-beta.2",
+    "description": "轻量的电脑控制手机工具：USB 直连截图与触控，绿色免安装",
+    "license": "MIT",
+    "author": "l-xyzz",
+    "private": false,
+    "main": "src/main/index.js",
+    "scripts": {
+        "start": "electron .",
+        "dev": "electron . --dev",
+        "icons": "node scripts/make-icons.mjs",
+        "bundle:platform-tools": "node scripts/bundle-tools.mjs",
+        "dist": "electron-builder --win --x64",
+        "dist:dir": "electron-builder --win --x64 --dir",
+        "lint": "node scripts/check.mjs",
+        "fetch:server": "node scripts/fetch-scrcpy-server.mjs",
+        "fetch:runtime": "node scripts/fetch-scrcpy-runtime.mjs",
+        "dist:safe": "node scripts/build-local.mjs"
+    },
+    "engines": {
+        "node": ">=20"
+    },
+    "devDependencies": {
+        "electron": "45.0.0",
+        "electron-builder": "26.18.0"
+    },
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/l-xyzz/Aoid.git"
+    },
+    "keywords": [
+        "scrcpy",
+        "android",
+        "remote-control",
+        "usb",
+        "electron"
+    ]
+}

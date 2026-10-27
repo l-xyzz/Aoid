@@ -1,0 +1,194 @@
+/*
+  文档查看器的 Markdown 渲染样式。
+
+  为什么不用 pre + white-space: pre-wrap：
+  更新记录和 README 里有标题、列表、代码块和表格，纯文本堆在一起很难读。
+  这里按 GitHub 的观感排版，同时保持 Aoid 自己的配色变量。
+*/
+
+.文档内容 {
+  margin: 0;
+  padding: 18px 20px 26px;
+  overflow: auto;
+  font-size: 12.5px;
+  line-height: 1.75;
+  color: var(--字-次);
+  word-break: break-word;
+  user-select: text;
+}
+
+/* ---------- 标题 ---------- */
+.md-body .md-h1,
+.md-body .md-h2,
+.md-body .md-h3,
+.md-body .md-h4,
+.md-body .md-h5,
+.md-body .md-h6 {
+  color: var(--字-主);
+  font-weight: 600;
+  line-height: 1.35;
+  margin: 22px 0 10px;
+}
+
+.md-body .md-h1:first-child,
+.md-body .md-h2:first-child {
+  margin-top: 0;
+}
+
+.md-body .md-h1 {
+  font-size: 19px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--线-弱);
+}
+
+.md-body .md-h2 {
+  font-size: 15.5px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--线-弱);
+}
+
+.md-body .md-h3 {
+  font-size: 13.5px;
+}
+
+.md-body .md-h4,
+.md-body .md-h5,
+.md-body .md-h6 {
+  font-size: 12.5px;
+  color: var(--字-次);
+}
+
+/* ---------- 正文 ---------- */
+.md-body .md-p {
+  margin: 0 0 10px;
+}
+
+/* ---------- 列表 ---------- */
+.md-body .md-ul,
+.md-body .md-ol {
+  margin: 0 0 12px;
+  padding-left: 22px;
+}
+
+.md-body .md-ul li,
+.md-body .md-ol li {
+  margin: 4px 0;
+}
+
+.md-body .md-ul li::marker {
+  color: var(--强调);
+}
+
+/* ---------- 代码 ---------- */
+.md-body code {
+  padding: 1.5px 5px;
+  border-radius: 5px;
+  background: var(--底-3);
+  font-family: var(--字体-数字);
+  font-size: 11.5px;
+  color: var(--字-主);
+}
+
+.md-body .md-code {
+  margin: 0 0 12px;
+  padding: 12px 14px;
+  border-radius: 9px;
+  background: var(--底-2);
+  border: 1px solid var(--线-弱);
+  overflow: auto;
+}
+
+.md-body .md-code code {
+  padding: 0;
+  background: none;
+  font-size: 11.5px;
+  line-height: 1.65;
+  white-space: pre;
+}
+
+/* ---------- 引用 ---------- */
+.md-body .md-quote {
+  margin: 0 0 12px;
+  padding: 8px 14px;
+  border-left: 3px solid var(--强调);
+  border-radius: 0 7px 7px 0;
+  background: var(--强调-淡);
+  color: var(--字-次);
+}
+
+/* ---------- 表格 ---------- */
+.md-body table {
+  width: 100%;
+  margin: 0 0 14px;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+
+.md-body th,
+.md-body td {
+  padding: 7px 11px;
+  border: 1px solid var(--线-弱);
+  text-align: left;
+  vertical-align: top;
+}
+
+.md-body th {
+  background: var(--底-2);
+  color: var(--字-主);
+  font-weight: 600;
+}
+
+.md-body tr:nth-child(even) td {
+  background: rgba(127, 127, 127, 0.04);
+}
+
+/* ---------- 分隔线 ---------- */
+.md-body .md-hr {
+  margin: 20px 0;
+  border: none;
+  border-top: 1px solid var(--线-弱);
+}
+
+/* ---------- 链接 ---------- */
+.md-body a {
+  color: var(--强调);
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.md-body a:hover {
+  text-decoration: underline;
+}
+
+/* ---------- 强调 ---------- */
+.md-body strong {
+  color: var(--字-主);
+  font-weight: 600;
+}
+
+.md-body em {
+  font-style: italic;
+}
+
+/* ---------- 关于页的小节标题 ---------- */
+.关于小节标题 {
+  margin: 20px 0 8px;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--字-次);
+  letter-spacing: 0.4px;
+}
+
+.关于小节标题:first-of-type {
+  margin-top: 14px;
+}
+
+/* 项目主页做成最显眼的那个按钮 */
+.文档按钮.主入口 {
+  border-color: var(--强调);
+  color: var(--强调);
+}
+
+.文档按钮.主入口:hover {
+  background: var(--强调-淡);
+}

@@ -1,0 +1,32 @@
+# 依赖
+node_modules/
+
+# 构建产物
+release/
+dist/
+out/
+
+# 下载的第三方二进制（由 scripts/ 下的脚本生成）
+_build/
+vendor/platform-tools/
+
+# 官方 scrcpy 运行组件（约 18MB，含 SDL2/ffmpeg）：按需自行放入，不进仓库
+scrcpy-runtime/
+
+# 运行期缓存：采集手机麦克风时的录音文件
+scrcpy-runtime/mic-cache/
+*.wav
+
+# 开发态数据（设置、历史设备、虚拟摄像头图像等）
+_data/
+
+# 参考软件解包产生的临时目录
+_ref/
+
+# 系统与编辑器
+.DS_Store
+Thumbs.db
+*.log
+.vscode/*
+!.vscode/extensions.json
+.idea/
