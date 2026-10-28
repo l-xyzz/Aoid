@@ -325,13 +325,34 @@ class 手机服务 {
    *   一次调用直达目标档位，不弹面板，耗时约 0.5 秒。
    */
   async 设置音量(序列号, 百分比) {
-    const 当前 = await this.读取音量(序列号);
-    const 目标 = Math.round((Math.max(0, Math.min(100, 百分比)) / 100) * 当前.最大);
-    if (目标 === 当前.值) return 当前;
+    const 目标百分比 = Math.max(0, Math.min(100, Math.round(百分比)));
 
-    // 参数：streamType, index, flags(0)
-    await this.执行(序列号, `service call audio 15 i32 3 i32 ${目标} i32 0`, { timeout: 8000 });
-    return this.读取音量(序列号);
+    /*
+     * 只写不读，并且用 service call 而不是 media_session。
+     *
+     * 为什么不用 `cmd media_session volume --stream 3 --set N`：
+     * 实测这台手机 Max=150，`--set 42` 被当成**索引 42**（≈28%），
+     * 而不是 42%。用户拖到一半，手机给一半，越拖越偏。
+     *
+     * service call 需要绝对索引，所以必须知道 Max。
+     * 为了不每次多跑一次 adb，这里把 Max 缓存起来（音量档位不会变），
+     * 只有第一次或换设备时才读。
+     */
+    const 缓存键 = '音量最大';
+    if (!this[缓存键]) {
+      try {
+        const 当前 = await this.读取音量(序列号);
+        this[缓存键] = 当前.最大 || 15;
+      } catch {
+        this[缓存键] = 15; // 常见默认值，读不到就先用它
+      }
+    }
+
+    const 目标 = Math.round((目标百分比 / 100) * this[缓存键]);
+    await this.执行(序列号, `service call audio 15 i32 3 i32 ${目标} i32 0`, { timeout: 6000 });
+
+    // 直接回报目标值：界面要的是「我拖到哪就是哪」
+    return { 值: 目标, 最大: this[缓存键], 百分比: 目标百分比, 静音: 目标百分比 === 0 };
   }
 
   /** 亮度：0~255 */
@@ -342,12 +363,23 @@ class 手机服务 {
     return { 值, 最大: 255, 百分比: Math.round((值 / 255) * 100), 自动: 自动.trim() === '1' };
   }
 
-  /** 设置亮度百分比（会同时关掉自动亮度，否则改了没效果） */
+  /**
+   * 设置亮度百分比。
+   *
+   * 和音量一样只写不读。另外把「关自动亮度」和「设亮度」合并进一条命令：
+   * 原来两条独立 adb 往返，拖动时每次都多花一个来回，手感明显发滞。
+   */
   async 设置亮度(序列号, 百分比) {
-    const 值 = Math.round((Math.max(0, Math.min(100, 百分比)) / 100) * 255);
-    await this.执行(序列号, 'settings put system screen_brightness_mode 0', { timeout: 6000 });
-    await this.执行(序列号, `settings put system screen_brightness ${值}`, { timeout: 6000 });
-    return this.读取亮度(序列号);
+    const 目标百分比 = Math.max(0, Math.min(100, Math.round(百分比)));
+    const 值 = Math.round((目标百分比 / 100) * 255);
+
+    await this.执行(
+      序列号,
+      `settings put system screen_brightness_mode 0; settings put system screen_brightness ${值}`,
+      { timeout: 6000 },
+    );
+
+    return { 值, 最大: 255, 百分比: 目标百分比, 自动: false };
   }
 
   /** 正在播放：解析媒体会话 */

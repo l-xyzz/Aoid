@@ -33,6 +33,7 @@ contextBridge.exposeInMainWorld('deck', {
     设置显示尺寸: (高度, 像素比) => ipcRenderer.invoke('设备:设置显示尺寸', { 高度, 像素比 }),
     连接: (serial) => ipcRenderer.invoke('设备:连接', { serial }),
     断开: () => ipcRenderer.invoke('设备:断开'),
+    刷新分辨率: () => ipcRenderer.invoke('设备:刷新分辨率'),
     历史: () => ipcRenderer.invoke('设备:历史'),
     删除历史: (序列号) => ipcRenderer.invoke('设备:删除历史', { 序列号 }),
     刷新: () => ipcRenderer.invoke('设备:刷新'),
@@ -59,6 +60,7 @@ contextBridge.exposeInMainWorld('deck', {
   画面: {
     片段: (回调) => 订阅('画面:片段', 回调),
     会话: (回调) => 订阅('画面:会话', 回调),
+    分辨率: (回调) => 订阅('画面:分辨率', 回调),
 
     /** 回报已消费到的帧号，主进程据此做背压丢帧（低频，走主 IPC 即可） */
     回报消费(帧号) {
