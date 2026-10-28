@@ -73,6 +73,15 @@ function 注册设置接口() {
   });
 
   /** 读取项目内的文档（README / LICENSE / PRIVACY 等） */
+  /**
+   * 读取内置文档。
+   *
+   * 关键：文档可能在家放里的两个位置，必须都试一遍。
+   *   - 开发态：根目录就在项目根
+   *   - 打包后：根目录是 resources/app.asar，文档被塞进 asar 内部
+   * 另外 Electron 对 asar 内的文件，fs.existsSync 偶尔会给错答案，
+   * 所以这里**直接 try 读**，不靠 existsSync 先判断——读失败再换下一个候选。
+   */
   注册('设置:文档', async ({ 名称 }) => {
     const 白名单 = {
       README: 'README.md',
@@ -83,11 +92,40 @@ function 注册设置接口() {
       // 兼容旧键名
       第三方声明: 'THIRD-PARTY-NOTICES.md',
     };
-    const 文件 = 白名单[名称];
-    if (!文件) throw new Error('没有这份文档');
-    const 全路径 = path.join(根目录, 文件);
-    if (!fs.existsSync(全路径)) throw new Error('文档不存在：' + 文件);
-    return fsp.readFile(全路径, 'utf8');
+    const 文件名 = 白名单[名称];
+    if (!文件名) throw new Error('没有这份文档：' + 名称);
+
+    /*
+     * 语言不是中文时优先用英文文档（README.en.md / PRIVACY.en.md / …）。
+     * 找不到英文版就退回中文版——宁可给中文，也不要给空白。
+     */
+    const 当前语言 = (状态.设置 && 状态.设置.获取().语言) || 'zh-CN';
+    const 要英文 = 当前语言 !== 'zh-CN';
+
+    const 英文名 = 文件名.replace(/.md$/, '.en.md');
+    const 顺序 = 要英文 && 英文名 !== 文件名 ? [英文名, 文件名] : [文件名];
+
+    const 候选 = [];
+    for (const 名 of 顺序) {
+      候选.push(path.join(根目录, 名));
+      候选.push(path.join(process.resourcesPath || '', 'app.asar.unpacked', 名));
+      候选.push(path.join(path.dirname(app.getPath('exe')), 名));
+      候选.push(path.join(process.resourcesPath || '', 名));
+    }
+
+    let 最后错误 = null;
+    for (const 全路径 of 候选) {
+      try {
+        return await fsp.readFile(全路径, 'utf8');
+      } catch (错误) {
+        最后错误 = 错误;
+      }
+    }
+
+    throw new Error(
+      '文档读取失败：' + 文件名 + '（已尝试 ' + 候选.length + ' 个位置，最后错误：' +
+        (最后错误 ? 最后错误.code || 最后错误.message : '未知') + '）',
+    );
   });
 
   /* ---- 自动更新 ---- */

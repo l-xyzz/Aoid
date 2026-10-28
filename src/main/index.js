@@ -31,6 +31,9 @@ const { 注册设置接口 } = require('./ipc/settings');
 const { 注册画面接口 } = require('./ipc/screen');
 const { 注册外设接口, 显示更多窗口 } = require('./ipc/features');
 const { 注册键鼠接口 } = require('./ipc/peripherals');
+const { 注册输入法接口 } = require('./ipc/ime');
+const { 注册工具接口 } = require('./ipc/tools');
+const { 注册录屏接口 } = require('./ipc/recorder');
 const { 注册无线接口 } = require('./ipc/wireless');
 const { 初始化回报监听, 启动电脑剪贴板监听 } = require('./session/session');
 
@@ -227,6 +230,9 @@ async function 初始化() {
   注册画面接口();
   注册外设接口();
   注册键鼠接口();
+  注册输入法接口();
+  注册工具接口();
+  注册录屏接口();
   注册无线接口();
   初始化回报监听();
   启动电脑剪贴板监听();

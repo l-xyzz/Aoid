@@ -6,15 +6,53 @@
   这里按 GitHub 的观感排版，同时保持 Aoid 自己的配色变量。
 */
 
+/*
+  文档内容区。
+
+  这段样式在 app.css 之后加载，会覆盖 app.css 里的同名规则，
+  所以滚动的关键属性也必须在这里写全，否则会被"打回原形"：
+
+  flex 子项的 min-height 默认是 auto，会被内容撑到自然高度，
+  overflow: auto 就永远不触发 —— 表现就是"内容超出却滚不动"。
+  必须同时给 flex: 1 1 auto 和 min-height: 0。
+*/
 .文档内容 {
   margin: 0;
   padding: 18px 20px 26px;
-  overflow: auto;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
   font-size: 12.5px;
   line-height: 1.75;
   color: var(--字-次);
   word-break: break-word;
   user-select: text;
+}
+
+/* 内置滚动条，避免 Windows 原生粗条 */
+.文档内容::-webkit-scrollbar {
+  width: 10px;
+}
+
+.文档内容::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.文档内容::-webkit-scrollbar-thumb {
+  background: var(--线-强);
+  border-radius: 999px;
+  border: 3px solid transparent;
+  background-clip: content-box;
+}
+
+.文档内容::-webkit-scrollbar-thumb:hover {
+  background: var(--字-弱);
+  background-clip: content-box;
+}
+
+.文档内容::-webkit-scrollbar-button {
+  display: none;
 }
 
 /* ---------- 标题 ---------- */

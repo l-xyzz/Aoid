@@ -114,6 +114,42 @@ contextBridge.exposeInMainWorld('deck', {
     状态变化: (回调) => 订阅('外设:键鼠直连状态', 回调),
   },
 
+  /* ---- 录屏 ---- */
+  录屏: {
+    开始: () => ipcRenderer.invoke('录屏:开始'),
+    停止: () => ipcRenderer.invoke('录屏:停止'),
+    状态: () => ipcRenderer.invoke('录屏:状态'),
+    保存: (临时文件, 秒数) => ipcRenderer.invoke('录屏:保存', { 临时文件, 秒数 }),
+    状态变化: (回调) => 订阅('录屏:状态', 回调),
+  },
+
+  /* ---- 更多功能工具 ---- */
+  工具: {
+    显示窗口: () => ipcRenderer.invoke('工具:显示窗口', { 显示: true }),
+    选择apk: () => ipcRenderer.invoke('工具:选择apk'),
+    应用列表: () => ipcRenderer.invoke('工具:应用列表'),
+    启动应用: (包名) => ipcRenderer.invoke('工具:启动应用', { 包名 }),
+    停止应用: (包名) => ipcRenderer.invoke('工具:停止应用', { 包名 }),
+    卸载应用: (包名) => ipcRenderer.invoke('工具:卸载应用', { 包名 }),
+    安装应用: (本地路径) => ipcRenderer.invoke('工具:安装应用', { 本地路径 }),
+    进程列表: () => ipcRenderer.invoke('工具:进程列表'),
+    结束进程: (pid) => ipcRenderer.invoke('工具:结束进程', { pid }),
+    手机目录: (目录) => ipcRenderer.invoke('工具:手机目录', { 目录 }),
+    手机删除: (路径, 是否目录) => ipcRenderer.invoke('工具:手机删除', { 路径, 是否目录 }),
+    下载文件: (设备路径, 本地路径) => ipcRenderer.invoke('工具:下载文件', { 设备路径, 本地路径 }),
+    上传文件: (本地路径, 设备路径) => ipcRenderer.invoke('工具:上传文件', { 本地路径, 设备路径 }),
+    电脑目录: (目录) => ipcRenderer.invoke('工具:电脑目录', { 目录 }),
+    盘符列表: () => ipcRenderer.invoke('工具:盘符列表'),
+    执行命令: (命令) => ipcRenderer.invoke('工具:执行命令', { 命令 }),
+    补全表: () => ipcRenderer.invoke('工具:补全表'),
+  },
+
+  /* ---- 输入法直连 ---- */
+  输入法: {
+    提交: (文本) => ipcRenderer.invoke('输入法:提交', { 文本 }),
+    按键: (键码, 修饰 = 0) => ipcRenderer.invoke('输入法:按键', { 键码, 修饰 }),
+  },
+
   /* ---- 外设：手机当摄像头 / 麦克风 ---- */
   更多: {
     摄像头列表: () => ipcRenderer.invoke('更多:摄像头列表'),

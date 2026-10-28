@@ -1,0 +1,469 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:;"
+    />
+    <title>Aoid 更多功能</title>
+    <link rel="stylesheet" href="./styles/app.css" />
+    <style>
+      /* 工具窗口的布局：左侧菜单 + 右侧内容 */
+      .工具页 {
+        display: grid;
+        grid-template-columns: 148px minmax(0, 1fr);
+        height: 100vh;
+        background: var(--底-0);
+        color: var(--字-主);
+        font-family: var(--字体);
+        font-size: 12.5px;
+      }
+
+      .工具菜单 {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+        padding: 12px 8px;
+        background: var(--底-1);
+        border-right: 1px solid var(--线-弱);
+        overflow-y: auto;
+      }
+
+      .工具菜单项 {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 10px;
+        border: none;
+        border-radius: 7px;
+        background: transparent;
+        color: var(--字-次);
+        font-size: 12.5px;
+        text-align: left;
+        cursor: pointer;
+        transition: background 0.12s, color 0.12s;
+      }
+
+      .工具菜单项:hover {
+        background: var(--底-2);
+        color: var(--字-主);
+      }
+
+      .工具菜单项.选中 {
+        background: var(--强调-淡);
+        color: var(--强调);
+        font-weight: 600;
+      }
+
+      .工具菜单项 svg {
+        width: 15px;
+        height: 15px;
+        flex: none;
+      }
+
+      .工具内容 {
+        display: flex;
+        flex-direction: column;
+        min-width: 0;
+        min-height: 0;
+        overflow: hidden;
+      }
+
+      .工具头 {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 12px 16px;
+        border-bottom: 1px solid var(--线-弱);
+        flex: none;
+      }
+
+      .工具头 h2 {
+        margin: 0;
+        font-size: 13px;
+        font-weight: 600;
+      }
+
+      .工具头 .间隔 {
+        flex: 1;
+      }
+
+      .工具体 {
+        flex: 1;
+        min-height: 0;
+        overflow: auto;
+        padding: 12px 16px;
+      }
+
+      .工具体[hidden] {
+        display: none;
+      }
+
+      /* 通用列表行 */
+      .工具列表 {
+        display: flex;
+        flex-direction: column;
+        gap: 1px;
+      }
+
+      .工具行 {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 7px 10px;
+        border-radius: 6px;
+        background: var(--底-1);
+      }
+
+      .工具行:hover {
+        background: var(--底-2);
+      }
+
+      .工具行 .主文 {
+        flex: 1;
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .工具行 .次文 {
+        color: var(--字-弱);
+        font-size: 11px;
+        font-variant-numeric: tabular-nums;
+        flex: none;
+      }
+
+      /* 文件管理：左右双栏 */
+      .文件双栏 {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+        height: 100%;
+        min-height: 0;
+      }
+
+      .文件栏 {
+        display: flex;
+        flex-direction: column;
+        min-height: 0;
+        border: 1px solid var(--线-弱);
+        border-radius: 8px;
+        overflow: hidden;
+      }
+
+      .文件栏头 {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        padding: 7px 10px;
+        background: var(--底-1);
+        border-bottom: 1px solid var(--线-弱);
+        flex: none;
+        font-size: 11px;
+      }
+
+      .文件栏路径 {
+        flex: 1;
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        font-family: var(--字体-数字);
+        color: var(--字-次);
+      }
+
+      .文件栏列表 {
+        flex: 1;
+        overflow-y: auto;
+        padding: 5px;
+      }
+
+      /* ADB 控制台 */
+      .控制台 {
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+        min-height: 0;
+        gap: 8px;
+      }
+
+      .控制台输出 {
+        flex: 1;
+        min-height: 0;
+        overflow-y: auto;
+        padding: 10px 12px;
+        border-radius: 8px;
+        background: var(--底-0);
+        border: 1px solid var(--线-弱);
+        font-family: var(--字体-数字);
+        font-size: 12px;
+        line-height: 1.65;
+        white-space: pre-wrap;
+        word-break: break-all;
+        /* 终端输出必须能选中复制：body 上有全局 user-select:none，这里要覆盖回来 */
+        user-select: text;
+        cursor: text;
+      }
+
+      /* 选中高亮：在深色底上给出清晰的反色块 */
+      .控制台输出 ::selection,
+      .控制台输出::selection,
+      .控制台输入::selection {
+        background: var(--强调);
+        color: #101014;
+      }
+
+      /* 自定义滚动条，跟主界面一致 */
+      .控制台输出::-webkit-scrollbar,
+      .文件栏列表::-webkit-scrollbar,
+      .工具体::-webkit-scrollbar {
+        width: 10px;
+      }
+      .控制台输出::-webkit-scrollbar-track,
+      .文件栏列表::-webkit-scrollbar-track,
+      .工具体::-webkit-scrollbar-track {
+        background: transparent;
+      }
+      .控制台输出::-webkit-scrollbar-thumb,
+      .文件栏列表::-webkit-scrollbar-thumb,
+      .工具体::-webkit-scrollbar-thumb {
+        background: var(--线-强);
+        border-radius: 999px;
+        border: 3px solid transparent;
+        background-clip: content-box;
+      }
+
+      .控制台输入行 {
+        display: flex;
+        align-items: center;
+        gap: 7px;
+        flex: none;
+        padding: 7px 10px;
+        border-radius: 8px;
+        background: var(--底-0);
+        border: 1px solid var(--线-弱);
+        font-family: var(--字体-数字);
+      }
+
+      .控制台输入行:focus-within {
+        border-color: var(--强调);
+      }
+
+      .控制台提示符 {
+        color: var(--强调);
+        font-family: var(--字体-数字);
+        font-size: 12px;
+        flex: none;
+      }
+
+      .控制台输入 {
+        flex: 1;
+        border: none;
+        background: transparent;
+        color: var(--字-主);
+        font-family: var(--字体-数字);
+        font-size: 12.5px;
+        outline: none;
+      }
+
+      /* 语法高亮 */
+      .高亮-命令 {
+        color: #7dd3fc;
+        font-weight: 600;
+      }
+      .高亮-参数 {
+        color: #fbbf24;
+      }
+      .高亮-字符串 {
+        color: #86efac;
+      }
+      .高亮-路径 {
+        color: #c4b5fd;
+      }
+      .高亮-提示 {
+        color: var(--字-弱);
+      }
+      .高亮-错误 {
+        color: #f87171;
+      }
+
+      /* 补全下拉 */
+      .补全框 {
+        position: fixed;
+        z-index: 50;
+        min-width: 220px;
+        max-height: 240px;
+        overflow-y: auto;
+        padding: 4px;
+        border-radius: 8px;
+        background: var(--底-浮层);
+        border: 1px solid var(--线);
+        box-shadow: var(--阴影);
+      }
+
+      .补全框[hidden] {
+        display: none;
+      }
+
+      .补全项 {
+        padding: 5px 9px;
+        border-radius: 5px;
+        font-family: var(--字体-数字);
+        font-size: 12px;
+        color: var(--字-次);
+        cursor: pointer;
+      }
+
+      .补全项:hover,
+      .补全项.选中 {
+        background: var(--强调-淡);
+        color: var(--强调);
+      }
+
+      .空提示 {
+        padding: 24px;
+        text-align: center;
+        color: var(--字-弱);
+        font-size: 12px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="工具页">
+      <!-- 左侧菜单 -->
+      <nav class="工具菜单">
+        <button class="工具菜单项 选中" data-页="应用">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4">
+            <rect x="2.5" y="2.5" width="4.5" height="4.5" rx="1" />
+            <rect x="9" y="2.5" width="4.5" height="4.5" rx="1" />
+            <rect x="2.5" y="9" width="4.5" height="4.5" rx="1" />
+            <rect x="9" y="9" width="4.5" height="4.5" rx="1" />
+          </svg>
+          应用管理
+        </button>
+        <button class="工具菜单项" data-页="进程">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4">
+            <path d="M2 12l3-4 2.5 2.5L11 5l3 3" stroke-linecap="round" stroke-linejoin="round" />
+          </svg>
+          进程管理
+        </button>
+        <button class="工具菜单项" data-页="文件">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4">
+            <path d="M2 4.5a1 1 0 0 1 1-1h3l1.2 1.5H13a1 1 0 0 1 1 1V12a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V4.5z" />
+          </svg>
+          文件管理
+        </button>
+        <button class="工具菜单项" data-页="外设">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4">
+            <rect x="2" y="4" width="12" height="8" rx="1.5" />
+            <circle cx="8" cy="8" r="2" />
+          </svg>
+          外设
+        </button>
+        <button class="工具菜单项" data-页="控制台">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4">
+            <rect x="2" y="3" width="12" height="10" rx="1.5" />
+            <path d="M4.5 6.5l2 1.8-2 1.8M8.5 10.5h3" stroke-linecap="round" stroke-linejoin="round" />
+          </svg>
+          ADB 控制台
+        </button>
+      </nav>
+
+      <!-- 右侧内容 -->
+      <div class="工具内容">
+        <header class="工具头">
+          <h2 id="页标题">应用管理</h2>
+          <span class="间隔"></span>
+          <button class="次级按钮" id="刷新页">刷新</button>
+        </header>
+
+        <!-- 应用管理 -->
+        <section class="工具体" data-体="应用">
+          <div style="display: flex; gap: 8px; margin-bottom: 10px">
+            <input class="输入框" id="应用搜索" placeholder="搜索包名…" style="flex: 1" />
+            <button class="次级按钮" id="安装apk">安装 APK</button>
+          </div>
+          <div class="工具列表" id="应用列表"></div>
+        </section>
+
+        <!-- 进程管理 -->
+        <section class="工具体" data-体="进程" hidden>
+          <div style="display: flex; gap: 8px; margin-bottom: 10px">
+            <input class="输入框" id="进程搜索" placeholder="搜索进程名…" style="flex: 1" />
+          </div>
+          <div class="工具列表" id="进程列表"></div>
+        </section>
+
+        <!-- 文件管理 -->
+        <section class="工具体" data-体="文件" hidden style="overflow: hidden">
+          <div class="文件双栏">
+            <div class="文件栏">
+              <div class="文件栏头">
+                <span>📱 手机</span>
+                <span class="文件栏路径" id="手机路径">/sdcard</span>
+                <button class="文字按钮" id="手机上级">上级</button>
+              </div>
+              <div class="文件栏列表" id="手机文件"></div>
+            </div>
+            <div class="文件栏">
+              <div class="文件栏头">
+                <span>💻 电脑</span>
+                <span class="文件栏路径" id="电脑路径">—</span>
+                <button class="文字按钮" id="电脑上级">上级</button>
+              </div>
+              <div class="文件栏列表" id="电脑文件"></div>
+            </div>
+          </div>
+        </section>
+
+        <!--
+          外设
+          
+          不能用 iframe 加载 features.html：iframe 里的页面拿不到 preload，
+          window.deck 是 undefined，一进去就报
+          "Cannot read properties of undefined (reading '更多')"。
+          
+          改成从这里按钮调起独立的外设窗口——那边是真正的 BrowserWindow，
+          preload 正常注入，摄像头和麦克风都能用。
+        -->
+        <section class="工具体" data-体="外设" hidden>
+          <div style="max-width: 560px">
+            <h3 style="margin: 0 0 8px; font-size: 13px">把手机当作摄像头和麦克风</h3>
+            <p style="margin: 0 0 14px; color: var(--字-次); line-height: 1.8">
+              外设功能会打开一个独立窗口：手机摄像头可以实时显示，供会议软件、
+              直播工具通过窗口捕获使用；手机麦克风则可以替代电脑的麦克风。
+            </p>
+            <button class="主按钮" id="打开外设窗口">打开外设窗口</button>
+            <p style="margin: 14px 0 0; color: var(--字-弱); font-size: 11px; line-height: 1.7">
+              需要手机已连接。摄像头预览与麦克风采集都在那个窗口里控制。
+            </p>
+          </div>
+        </section>
+
+        <!-- ADB 控制台 -->
+        <section class="工具体" data-体="控制台" hidden style="overflow: hidden">
+          <div class="控制台">
+            <div class="控制台输出" id="控制台输出"></div>
+            <div class="控制台输入行">
+              <span class="控制台提示符">$</span>
+              <input
+                class="控制台输入"
+                id="控制台输入"
+                placeholder="输入 adb shell 命令，Tab 补全，回车执行"
+                autocomplete="off"
+                spellcheck="false"
+              />
+            </div>
+          </div>
+        </section>
+      </div>
+    </div>
+
+    <!-- 补全下拉 -->
+    <div class="补全框" id="补全框" hidden></div>
+
+    <script type="module" src="./js/tools.js"></script>
+  </body>
+</html>

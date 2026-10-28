@@ -325,6 +325,78 @@ class Adb {
     });
   }
 
+  /** 从设备拉文件到电脑 */
+  async 拉取(序列号, 设备路径, 本地路径) {
+    return this.#执行(this.adbPath, ['-s', 序列号, 'pull', 设备路径, 本地路径], {
+      timeout: 120000,
+    });
+  }
+
+  /**
+   * 列目录。
+   *
+   * 输出统一成 { 名称, 是否目录, 字节, 修改时间 }，
+   * 界面不用关心 Android 上 ls 输出的各种差异。
+   * 用 ls -la 一次拿全部条目，比逐个 stat 快得多。
+   */
+  async 列出路径(序列号, 目录) {
+    const 目标 = 目录 || '/sdcard';
+    const { stdout } = await this.设备shell(序列号, `ls -la "${目标}" 2>/dev/null`, {
+      timeout: 15000,
+    });
+
+    const 条目 = [];
+    for (const 行 of stdout.split(/\r?\n/)) {
+      const 修剪 = 行.trim();
+      if (!修剪 || 修剪.startsWith('total ')) continue;
+
+      // -rw-rw---- 1 u0_a123 media_rw 1234 2024-05-01 12:00 文件名
+      const 匹配 = /^([dl-])[rwxsStT-]{9}\s+\d+\s+\S+\s+\S+\s+(\d+)\s+(\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2})\s+(.+)$/.exec(修剪);
+      if (!匹配) continue;
+
+      const 原始名 = 匹配[4];
+      if (原始名 === '.' || 原始名 === '..') continue;
+      // 符号链接形如 name -> target，只取名字
+      const 名称 = 原始名.includes(' -> ') ? 原始名.split(' -> ')[0] : 原始名;
+
+      条目.push({
+        名称,
+        是否目录: 匹配[1] === 'd',
+        字节: Number(匹配[2]) || 0,
+        修改时间: 匹配[3],
+      });
+    }
+
+    // 目录在前，同类按名称排序
+    条目.sort((a, b) => {
+      if (a.是否目录 !== b.是否目录) return a.是否目录 ? -1 : 1;
+      return a.名称.localeCompare(b.名称, 'zh');
+    });
+
+    return { 目录: 目标, 条目 };
+  }
+
+  /** 删除设备上的文件（支持递归） */
+  async 删除路径(序列号, 目标, 是否目录) {
+    const 命令 = 是否目录 ? `rm -rf "${目标}"` : `rm -f "${目标}"`;
+    return this.设备shell(序列号, 命令, { timeout: 20000 });
+  }
+
+  /** 在设备上建目录 */
+  async 建目录(序列号, 目标) {
+    return this.设备shell(序列号, `mkdir -p "${目标}"`, { timeout: 15000 });
+  }
+
+  /** 安装 apk：-r 覆盖安装，-d 允许降级 */
+  async 安装apk(序列号, 本地路径) {
+    const 结果 = await this.#执行(
+      this.adbPath,
+      ['-s', 序列号, 'install', '-r', '-d', 本地路径],
+      { timeout: 180000 },
+    );
+    return String(结果.stdout || '') + String(结果.stderr || '');
+  }
+
   /** 启动端口反向转发：设备 socket → 电脑端口 */
   async 反向转发(序列号, 设备socket, 端口) {
     return this.#执行(this.adbPath, ['-s', 序列号, 'reverse', 设备socket, `tcp:${端口}`], {

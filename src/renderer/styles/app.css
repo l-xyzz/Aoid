@@ -99,9 +99,22 @@ body {
   transition: background 0.2s var(--缓动), color 0.2s var(--缓动);
 }
 
-:focus-visible {
+/*
+  聚焦环只在「真正用键盘 Tab 导航」时出现。
+
+  原来的写法（全局 :focus-visible）会让鼠标点过的按钮一直保留橙色边框，
+  接着按 Tab / Esc 时浏览器以为还在操作那个按钮，用户绑定的快捷键就被抢走了。
+
+  现在用 .用键盘导航 这个根类做开关：JS 里检测到 Tab 才加，鼠标一按就移除。
+*/
+:root.用键盘导航 :focus-visible {
   outline: 2px solid var(--强调);
   outline-offset: 2px;
+}
+
+/* 鼠标操作时不画聚焦环 */
+:focus-visible {
+  outline: none;
 }
 
 button {
@@ -1648,17 +1661,61 @@ select {
   height: 74vh;
 }
 
+/*
+  文档内容区。
+
+  flex 子项默认 min-height: auto，会被内容撑到最大，导致
+  overflow:auto 永远不触发——整个对话框反而溢出到屏幕外，
+  用户看到的"不能滚动"就是这个。
+  必须写 flex: 1 + min-height: 0，让它在剩余空间内自己滚。
+*/
 .文档内容 {
   margin: 0;
   padding: 16px;
-  overflow: auto;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
   font-family: var(--字体-数字);
   font-size: 11.5px;
   line-height: 1.7;
   color: var(--字-次);
-  white-space: pre-wrap;
+  /* 内容由 markdown.js 生成块级元素，不要再强制 pre-wrap，
+     否则源码里的换行会和 Markdown 结构叠在一起，出现大量空行 */
+  white-space: normal;
   word-break: break-word;
   user-select: text;
+}
+
+/* 内置滚动条：替换浏览器原生的粗条 */
+.文档内容::-webkit-scrollbar {
+  width: 10px;
+}
+
+.文档内容::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.文档内容::-webkit-scrollbar-thumb {
+  background: var(--线-强);
+  border-radius: 999px;
+  border: 3px solid transparent;
+  background-clip: content-box;
+}
+
+.文档内容::-webkit-scrollbar-thumb:hover {
+  background: var(--字-弱);
+  background-clip: content-box;
+}
+
+.文档内容::-webkit-scrollbar-button {
+  display: none;
+}
+
+/* 文档里的代码块本身也要能横向滚，且用同一套滚动条 */
+.文档内容 pre,
+.文档内容 .md-code {
+  overflow-x: auto;
 }
 
 /* 关于 */
@@ -2477,4 +2534,253 @@ select {
   margin-top: 10px;
   font-size: 11px;
   opacity: 0.75;
+}
+/* 输入法代理：不可见，但要能获得焦点让电脑输入法挂上来 */
+#输入法代理 {
+  position: fixed;
+  left: -9999px;
+  top: 0;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+  overflow: hidden;
+  white-space: pre-wrap;
+  caret-color: transparent;
+}
+
+/* ================================================================== */
+/* 动画优化                                                            */
+/* ================================================================== */
+/*
+  原则：
+    1. 只动 transform 和 opacity —— 这两个可以走合成层，不触发重排重绘，
+       60fps 也不掉帧。动 width/height/left/top 会让整页重新布局，一动就卡。
+    2. 时长控制在 120~220ms。再长就显得迟钝，再短就看不出来。
+    3. 统一用同一条缓动曲线（--缓动），动效节奏一致，观感才"顺"。
+    4. 尊重系统的"减少动态效果"设置，无脑尊重，不加例外。
+*/
+
+/* 抽屉 / 对话框：从右侧滑入 + 淡入，收起时反向 */
+@keyframes 抽屉滑入 {
+  from {
+    transform: translateX(24px);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+/*
+  对话框浮起。
+
+  注意：.对话框 是靠 transform: translate(-50%, -50%) 居中的，
+  动画的每一帧都必须**带上这个位移**，否则动画一跑，
+  居中变换就被覆盖掉，对话框会跑到窗口右下角（踩过）。
+  所以这里用 translate(-50%, -50%) 打底，再叠加上浮与缩放。
+*/
+@keyframes 对话框浮起 {
+  from {
+    transform: translate(-50%, calc(-50% + 10px)) scale(0.985);
+    opacity: 0;
+  }
+  to {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes 淡入上移 {
+  from {
+    transform: translateY(6px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.抽屉:not([hidden]) {
+  animation: 抽屉滑入 0.2s var(--缓动) both;
+}
+
+.对话框:not([hidden]) {
+  animation: 对话框浮起 0.18s var(--缓动) both;
+}
+
+/* 设置页切换：内容轻微上浮，暗示"换了一页"而不是"闪了一下" */
+.设置页:not([hidden]) {
+  animation: 淡入上移 0.16s var(--缓动) both;
+}
+
+/* 设备卡片：进入时错开出现，列表不是一次性"啪"地糊上来 */
+.设备卡 {
+  animation: 淡入上移 0.18s var(--缓动) both;
+}
+
+.设备列表 > .设备卡:nth-child(2) {
+  animation-delay: 0.03s;
+}
+.设备列表 > .设备卡:nth-child(3) {
+  animation-delay: 0.06s;
+}
+.设备列表 > .设备卡:nth-child(4) {
+  animation-delay: 0.09s;
+}
+
+/* 设备卡：hover 轻微抬起，给"可以点"的反馈 */
+.设备卡 {
+  transition: background 0.14s var(--缓动), border-color 0.14s var(--缓动),
+    transform 0.14s var(--缓动), box-shadow 0.14s var(--缓动);
+}
+
+.设备卡:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 3px 10px -6px rgba(0, 0, 0, 0.5);
+}
+
+.设备卡:active {
+  transform: translateY(0) scale(0.995);
+}
+
+/* 按钮：按下时轻微内缩，抬起回弹 */
+.按钮,
+.次级按钮,
+.主按钮,
+.按键,
+.设备卡-按钮,
+.文档按钮,
+.链接按钮,
+.工具菜单项,
+.文字按钮 {
+  transition: background 0.13s var(--缓动), color 0.13s var(--缓动),
+    border-color 0.13s var(--缓动), transform 0.09s var(--缓动),
+    box-shadow 0.13s var(--缓动);
+}
+
+.按钮:active,
+.次级按钮:active,
+.主按钮:active,
+.按键:active,
+.设备卡-按钮:active,
+.文档按钮:active,
+.工具菜单项:active,
+.文字按钮:active {
+  transform: scale(0.97);
+}
+
+/* 面板：hover 时边框微亮，提示可交互区域 */
+.面板 {
+  transition: background 0.18s var(--缓动);
+}
+
+/* 提示条：滑入 + 淡出，不要"弹出来吓人" */
+@keyframes 提示进入 {
+  from {
+    transform: translateY(8px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.提示条:not([hidden]) {
+  animation: 提示进入 0.18s var(--缓动) both;
+}
+
+/* 补全下拉：从下往上淡入 */
+@keyframes 下拉进入 {
+  from {
+    transform: translateY(4px) scale(0.99);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+  }
+}
+
+.补全框:not([hidden]) {
+  animation: 下拉进入 0.12s var(--缓动) both;
+}
+
+/* 统一禁用状态的过渡，避免"突然变灰" */
+button:disabled {
+  transition: opacity 0.15s var(--缓动), filter 0.15s var(--缓动);
+}
+
+/* 滚动不再用平滑：滚轮操作手机时平滑滚动会拖泥带水 */
+* {
+  scroll-behavior: auto;
+}
+
+/* ---- 尊重系统的减少动态效果 ---- */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+
+/* ================================================================== */
+/* 全局滚动条                                                          */
+/* ================================================================== */
+/*
+  Electron 在 Windows 上默认用系统原生的粗滚动条（带上下箭头、灰色方块），
+  跟深色界面放在一起非常突兀。这里统一换掉。
+
+  用属性选择器而不是通配符：通配符会把 <select> 这类原生控件也改掉，
+  反而更难看。只覆盖真正会滚的容器。
+*/
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--线-强);
+  border-radius: 999px;
+  /* 用透明边框把滑块"收细"，看起来更精致 */
+  border: 3px solid transparent;
+  background-clip: content-box;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--字-弱);
+  background-clip: content-box;
+}
+
+/* 去掉两端的箭头按钮 */
+::-webkit-scrollbar-button {
+  display: none;
+}
+
+/* 两轴交汇处的小方块，留着会是个突兀的实心块 */
+::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+/* 浅色主题下滑块要更深一点才看得清 */
+[data-theme='light'] ::-webkit-scrollbar-thumb {
+  background: rgba(15, 23, 42, 0.18);
+  background-clip: content-box;
+}
+
+[data-theme='light'] ::-webkit-scrollbar-thumb:hover {
+  background: rgba(15, 23, 42, 0.3);
+  background-clip: content-box;
 }

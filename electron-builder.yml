@@ -30,6 +30,10 @@ files:
   - 'LICENSE'
   - 'PRIVACY.md'
   - 'THIRD-PARTY-NOTICES.md'
+  # 英文文档：界面语言不是中文时优先使用
+  - 'README.en.md'
+  - 'PRIVACY.en.md'
+  - 'THIRD-PARTY-NOTICES.en.md'
 
 # scrcpy 服务端需要在运行时读取，因此放在 asar 之外
 extraResources:

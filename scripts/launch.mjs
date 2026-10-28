@@ -32,7 +32,34 @@ const 项目目录 = process.cwd();
  * 不要整个 node_modules——它有 7431 个文件、几百 MB，从网络盘复制要好几分钟，
  * 而除 electron 之外的其他包只在构建时用得到，运行时并不需要。
  */
-const 镜像内容 = ['src', 'vendor', 'platform-tools', 'scrcpy-runtime', 'resources', 'scripts', 'package.json'];
+/*
+ * 文档必须一起复制。
+ *
+ * 「关于」和「隐私」页要在运行时读这些文件，漏了就会报
+ * 「文档读取失败：CHANGELOG.md (ENOENT)」——明明项目根目录下就有。
+ * 中英文都要，界面语言不是中文时用的是 .en.md 那几份。
+ */
+const 文档文件 = [
+  'README.md',
+  'README.en.md',
+  'CHANGELOG.md',
+  'LICENSE',
+  'PRIVACY.md',
+  'PRIVACY.en.md',
+  'THIRD-PARTY-NOTICES.md',
+  'THIRD-PARTY-NOTICES.en.md',
+];
+
+const 镜像内容 = [
+  'src',
+  'vendor',
+  'platform-tools',
+  'scrcpy-runtime',
+  'resources',
+  'scripts',
+  'package.json',
+  ...文档文件,
+];
 const 额外目录 = ['node_modules/electron'];
 
 /** 干净的环境：去掉会干扰 Electron 的变量 */

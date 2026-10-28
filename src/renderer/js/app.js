@@ -68,8 +68,9 @@ const 元素 = {
   刷新状态: $('刷新状态'),
   保存截图: $('保存截图'),
   复制截图: $('复制截图'),
+  录屏: $('录屏'),
+  打开更多功能: $('打开更多功能'),
 
-  打开更多窗口: $('打开更多窗口'),
 
   电脑发声开关: $('电脑发声开关'),
   电脑发声项: $('电脑发声项'),
@@ -91,6 +92,7 @@ const 元素 = {
   语言目录提示: $('语言目录提示'),
   主题选择: $('主题选择'),
   剪贴板同步开关: $('剪贴板同步开关'),
+  输入法直连开关: $('输入法直连开关'),
   快捷键列表: $('快捷键列表'),
   快捷键恢复默认: $('快捷键恢复默认'),
   捕获提示: $('捕获提示'),
@@ -608,6 +610,25 @@ function 界面_连接中(显示, 文字 = '正在建立通道') {
  * 鼠标拖出画面时，手机上的手指会贴着边缘继续移动，
  * 手感跟真实触摸屏一致（手指划出屏幕边缘时坐标也是贴边的）。
  */
+
+/**
+ * 现在是否应该把鼠标事件当作"操作手机"。
+ *
+ * 排除三种情况：
+ *   1. 触控层被禁用（未连接、画面未就绪）
+ *   2. 设置抽屉打开（用户在操作设置，不该点穿到手机）
+ *   3. 添加设备 / 更新等对话框打开
+ */
+function 可响应触控() {
+  if (!状态.已连接) return false;
+  if (元素.触控层.classList.contains('禁用')) return false;
+  if (元素.设置抽屉 && !元素.设置抽屉.hidden) return false;
+  if (元素.设置遮罩 && !元素.设置遮罩.hidden) return false;
+  if (元素.添加设备对话框 && !元素.添加设备对话框.hidden) return false;
+  if (元素.更新对话框 && !元素.更新对话框.hidden) return false;
+  return true;
+}
+
 function 换算坐标(事件, 允许越界 = false) {
   const 矩形 = 元素.触控层.getBoundingClientRect();
   const 宽 = 元素.画布.width;
@@ -708,15 +729,18 @@ function 绑定触控() {
   });
 
   层.addEventListener('pointerdown', (事件) => {
-    if (!状态.已连接) return;
-
-    // 鼠标键先查快捷键：命中就执行动作，不再当作触摸
+    // 鼠标键先查快捷键：这是用户显式绑定的动作，优先级最高，放在所有判断之前
     const 动作 = 状态.快捷键表.鼠标.get(事件.button);
     if (动作) {
       事件.preventDefault();
       执行动作(动作);
       return;
     }
+
+    // 画面不可交互（未连接 / 设置打开 / 对话框打开）时不处理触控
+    if (!可响应触控()) return;
+    // 键鼠直连下，普通触控逻辑让位给键鼠逻辑（快捷键已在上面处理过）
+    if (键鼠.已开启) return;
 
     if (事件.button !== 0) return;
     事件.preventDefault();
@@ -753,7 +777,8 @@ function 绑定触控() {
    * 挂 window 能保证手指/鼠标在哪都能继续收到移动事件。
    */
   window.addEventListener('pointermove', (事件) => {
-    if (!状态.指针按下 || !状态.已连接) return;
+    if (!可响应触控() || !状态.指针按下) return;
+    if (键鼠.已开启) return; // 键鼠模式自己处理
     // 拖动中允许越界：坐标会被钳制到手机屏幕边缘，不会中断
     const 坐标 = 换算坐标(事件, true);
     if (!坐标) return;
@@ -789,6 +814,7 @@ function 绑定触控() {
    * 挂 window 保证无论在哪松手都能收尾。
    */
   const 抬起 = (事件) => {
+    if (键鼠.已开启) return; // 键鼠模式有自己的抬起
     if (!状态.指针按下) return;
     状态.指针按下 = false;
     clearTimeout(状态.长按定时);
@@ -932,8 +958,25 @@ function 绑定键盘() {
           if (!元素.文档对话框.hidden) 关闭文档();
           else if (!元素.添加设备对话框.hidden) 关闭添加设备();
           else 关闭设置();
+          return;
+        }
+        // 浮层打开时按 Tab 也没意义，直接拦掉，避免焦点在设置里乱跳
+        if (事件.key === 'Tab') {
+          事件.preventDefault();
+          return;
         }
         return;
+      }
+
+      /*
+       * 拦掉浏览器的默认行为，再做我们自己的快捷键。
+       * 不拦的话：
+       *   Tab 会把焦点移到下一个可聚焦元素（复选框/下拉框/按钮），
+       *   Esc 会取消掉正在展开的下拉框，
+       * 用户看到的就是"快捷键被网页控件抢走了"。
+       */
+      if (事件.key === 'Tab' || 事件.key === 'Escape') {
+        事件.preventDefault();
       }
 
       const 文本 = 快捷键界面.键盘绑定文本(事件);
@@ -1289,9 +1332,8 @@ function 绑定侧栏() {
   });
 
   // 「打开控制面板」：弹出独立窗口（摄像头、麦克风、虚拟摄像头都在里面）
-  元素.打开更多窗口.addEventListener('click', () => {
-    window.deck.更多.显示窗口(true).catch((错误) => 提示(错误.message, '错误'));
-  });
+  // 更多功能：打开独立工具窗口（外设 / 应用 / 进程 / 文件 / 控制台）
+  元素.打开更多功能.addEventListener('click', () => 打开更多功能());
 
   // 手动重连：恢复失败后的唯一入口
   元素.手动重连.addEventListener('click', () => 手动重连());
@@ -1363,6 +1405,8 @@ function 应用设置(设置) {
   元素.主题选择.value = 设置.主题;
   元素.语言选择.value = 设置.语言;
   元素.剪贴板同步开关.checked = 设置.剪贴板同步 !== false;
+  元素.输入法直连开关.checked = 设置.输入法直连 === true;
+  状态.输入法直连 = 设置.输入法直连 === true;
   // 画质已固定为最高（跟随手机原生分辨率），界面上不再提供调节项
   状态.快捷键表 = 快捷键界面.编译绑定(设置.快捷键);
   快捷键界面.渲染快捷键列表(设置.快捷键);
@@ -1436,23 +1480,16 @@ function 关闭文档() {
  * 开关在外设窗口里，主进程维护全局状态，这里每次事件都问一次
  * （状态是缓存的，几乎没开销），关着就直接跳过。
  */
-const 键鼠 = { 已开启: false, 按下中: false };
+/**
+ * 键鼠直连状态。
+ *
+ * 已经去掉了开关：现在**始终开启**，鼠标键盘天然就能控制手机。
+ * 保留这个对象只是为了代码里好读，以及记录左键是否处于按下状态。
+ */
+const 键鼠 = { 已开启: true, 按下中: false };
 
 function 初始化键鼠直连() {
-  // 同步一次当前状态
-  window.deck.键鼠.状态()
-    .then((r) => {
-      键鼠.已开启 = !!(r && r.开启);
-      元素.画布?.parentElement?.classList.toggle('键鼠模式', 键鼠.已开启);
-    })
-    .catch(() => {});
-
-  // 外设窗口切开关时，这里跟着变
-  window.deck.键鼠.状态变化(({ 开启 }) => {
-    键鼠.已开启 = !!开启;
-    元素.画布?.parentElement?.classList.toggle('键鼠模式', 键鼠.已开启);
-    if (!键鼠.已开启) 键鼠.按下中 = false;
-  });
+  元素.画布?.parentElement?.classList.add('键鼠模式');
 
   const 层 = 元素.触控层;
   if (!层) return;
@@ -1485,7 +1522,7 @@ function 初始化键鼠直连() {
   });
 
   window.addEventListener('pointerdown', (事件) => {
-    if (!键鼠.已开启 || !状态.已连接) return;
+    if (!键鼠.已开启 || !可响应触控()) return;
     // 只接管左键；右键留给原来的快捷键逻辑
     if (事件.button !== 0) return;
     // 普通触控逻辑已经处理了这次按下，避免重复注入
@@ -1535,6 +1572,236 @@ function 初始化键鼠直连() {
       })
       .catch(() => {});
   });
+}
+
+
+
+/**
+ * 避免按钮"粘住焦点"。
+ *
+ * 问题：点过的按钮会保留焦点（画面上那个橙色边框），
+ * 之后按 Tab / Esc 时浏览器会把它当成"在当前按钮上操作"，
+ * 于是焦点在按钮之间乱跳，而不是触发用户绑定的快捷键。
+ *
+ * 做法：鼠标点击（pointerup）后主动 blur 掉按钮。
+ * 注意保留键盘的可访问性：用 Tab 键导航出来的焦点不动，
+ * 只清理鼠标点出来的焦点。
+ */
+function 处理按钮焦点() {
+  /* 用键盘 Tab 导航时才画聚焦环，鼠标操作不画 */
+  document.addEventListener('keydown', (事件) => {
+    if (事件.key === 'Tab') document.documentElement.classList.add('用键盘导航');
+  }, true);
+  document.addEventListener('pointerdown', () => {
+    document.documentElement.classList.remove('用键盘导航');
+  }, true);
+
+  document.addEventListener(
+    'pointerup',
+    (事件) => {
+      const 目标 = 事件.target;
+      if (!目标 || typeof 目标.closest !== 'function') return;
+      const 按钮 = 目标.closest('button, [role="button"]');
+      if (!按钮) return;
+      // 点击后立刻失焦：视觉上不会留下橙色框，按键也不会被它吃掉
+      requestAnimationFrame(() => 按钮.blur());
+    },
+    true,
+  );
+
+  /*
+   * 额外保险：如果焦点还是落在按钮上（比如鼠标点在按钮的 padding 上），
+   * 按 Tab / Esc 时先失焦，避免浏览器拦截这两个键。
+   */
+  document.addEventListener(
+    'keydown',
+    (事件) => {
+      if (事件.key !== 'Tab' && 事件.key !== 'Escape') return;
+      const 当前 = document.activeElement;
+      if (!当前) return;
+      // 输入框不处理，用户要在里面正常用 Tab / Esc
+      if (当前.tagName === 'INPUT' || 当前.tagName === 'TEXTAREA') return;
+      if (当前.tagName === 'BUTTON' || 当前.getAttribute('role') === 'button') {
+        当前.blur();
+      }
+    },
+    true,
+  );
+}
+
+
+/* ------------------------------------------------------------------ */
+/* 录屏                                                                */
+/* ------------------------------------------------------------------ */
+
+/** 录屏状态：false = 未录制，true = 正在录制 */
+let 录屏中 = false;
+/** 计时器，用来在按钮上显示已录秒数 */
+let 录屏计时 = null;
+
+/**
+ * 切换录屏。
+ *
+ * 用手机端的 screenrecord 录，录完把 mp4 拉回电脑让用户选保存位置。
+ * 好处是画质和帧率由手机硬件编码保证，不受电脑负载影响。
+ */
+async function 切换录屏() {
+  if (!状态.已连接) return 提示('先连接一台设备');
+
+  if (!录屏中) {
+    try {
+      取值(await window.deck.录屏.开始());
+      录屏中 = true;
+      元素.录屏.textContent = '停止录屏 (0s)';
+      元素.录屏.classList.add('录制中');
+      const 起点 = Date.now();
+      录屏计时 = setInterval(() => {
+        const 秒 = Math.round((Date.now() - 起点) / 1000);
+        元素.录屏.textContent = '停止录屏 (' + 秒 + 's)';
+      }, 1000);
+      提示('开始录屏，最长 3 分钟');
+    } catch (错误) {
+      提示(错误.message, '错误');
+    }
+    return;
+  }
+
+  // 停止
+  clearInterval(录屏计时);
+  录屏计时 = null;
+  元素.录屏.textContent = '正在保存…';
+  元素.录屏.disabled = true;
+
+  try {
+    const 结果 = 取值(await window.deck.录屏.停止());
+    if (结果 && 结果.已录制) {
+      await window.deck.录屏.保存(结果.临时文件, 结果.秒数);
+      提示('录屏已保存（' + 结果.秒数 + ' 秒）', '成功');
+    }
+  } catch (错误) {
+    提示('录屏保存失败：' + 错误.message, '错误');
+  } finally {
+    录屏中 = false;
+    元素.录屏.disabled = false;
+    元素.录屏.textContent = '开始录屏';
+    元素.录屏.classList.remove('录制中');
+  }
+}
+
+/** 打开「更多功能」独立窗口 */
+async function 打开更多功能() {
+  try {
+    await window.deck.工具.显示窗口();
+  } catch (错误) {
+    提示('打不开更多功能：' + 错误.message, '错误');
+  }
+}
+
+/** 绑定录屏与更多功能按钮 */
+function 绑定工具按钮() {
+  元素.录屏?.addEventListener('click', 切换录屏);
+  元素.打开更多功能?.addEventListener('click', 打开更多功能);
+}
+
+/* ------------------------------------------------------------------ */
+/* 输入法直连（试验）                                                   */
+/* ------------------------------------------------------------------ */
+
+/** 输入法直连状态 */
+状态.输入法直连 = false;
+/** 是否正在用输入法拼字（拼的过程中绝不能发） */
+let 正在拼字 = false;
+
+/**
+ * 初始化输入法直连。
+ *
+ * 原理：
+ *   1. 页面上放一个透明的 contenteditable，鼠标在画面上时让它获得焦点，
+ *      这样电脑输入法才会挂上来；
+ *   2. compositionstart → 标记"正在拼字"，这段时间的 keydown 全部忽略，
+ *      否则会把 n-i-h-a-o 一个个打到手机上；
+ *   3. compositionend → 拿到选好的词，整段发给手机（走剪贴板粘贴，中文最稳）；
+ *   4. 纯 ASCII 按键不经过输入法，直接用 keydown 注入，保持低延迟。
+ */
+function 初始化输入法直连() {
+  const 代理 = document.getElementById('输入法代理');
+  if (!代理) return;
+
+  // 读设置
+  window.deck.设置
+    .读取()
+    .then((r) => {
+      const 设置 = 取值(r);
+      状态.输入法直连 = 设置.输入法直连 === true;
+    })
+    .catch(() => {});
+
+  // 用输入法拼字期间：拦掉一切按键，不让拼音字母漏到手机
+  代理.addEventListener('compositionstart', () => {
+    正在拼字 = true;
+  });
+
+  代理.addEventListener('compositionend', (事件) => {
+    正在拼字 = false;
+    if (!状态.输入法直连 || !状态.已连接) return;
+    const 文字 = 事件.data || '';
+    if (!文字) return;
+    // 拼字结束后整段发走
+    window.deck.输入法.提交(文字).catch(() => {});
+    // 清空代理，避免下次重复提交
+    代理.textContent = '';
+  });
+
+  /*
+   * 英文/数字按键：直接注入，不经过输入法中转。
+   * 正在拼字时跳过（那说明是拼音字母，等 compositionend 再整段发）。
+   */
+  代理.addEventListener('keydown', (事件) => {
+    if (!状态.输入法直连 || !状态.已连接) return;
+    if (正在拼字 || 事件.isComposing) return;
+
+    // 可打印字符
+    if (事件.key.length === 1) {
+      const 键码 = 字符转键码(事件);
+      if (键码) {
+        window.deck.输入法.按键(键码).catch(() => {});
+        事件.preventDefault();
+      }
+      return;
+    }
+
+    // 常用控制键
+    const 控制键 = { Enter: 66, Backspace: 67, Tab: 61, Escape: 111 };
+    if (控制键[事件.key]) {
+      window.deck.输入法.按键(控制键[事件.key]).catch(() => {});
+      事件.preventDefault();
+    }
+  });
+
+  /*
+   * 让代理获得焦点：鼠标在画面上按下时把焦点交给它，
+   * 否则电脑输入法不会挂到页面上。
+   */
+  window.addEventListener('pointerdown', (事件) => {
+    if (!状态.输入法直连) return;
+    if (!可响应触控()) return;
+    if (!代理.contains(事件.target)) 代理.focus();
+  });
+}
+
+/** 把按键字符转成 Android 键码（只覆盖英文数字和常用符号） */
+function 字符转键码(事件) {
+  const 码 = 事件.code;
+  const 表 = {
+    KeyA: 29, KeyB: 30, KeyC: 31, KeyD: 32, KeyE: 33, KeyF: 34, KeyG: 35,
+    KeyH: 36, KeyI: 37, KeyJ: 38, KeyK: 39, KeyL: 40, KeyM: 41, KeyN: 42,
+    KeyO: 43, KeyP: 44, KeyQ: 45, KeyR: 46, KeyS: 47, KeyT: 48, KeyU: 49,
+    KeyV: 50, KeyW: 51, KeyX: 52, KeyY: 53, KeyZ: 54,
+    Digit0: 7, Digit1: 8, Digit2: 9, Digit3: 10, Digit4: 11,
+    Digit5: 12, Digit6: 13, Digit7: 14, Digit8: 15, Digit9: 16,
+    Space: 62, Comma: 55, Period: 56,
+  };
+  return 表[码] || 0;
 }
 
 /* ------------------------------------------------------------------ */
@@ -1767,6 +2034,13 @@ function 绑定设置() {
      * 重新加载最干净，代价只是一次刷新。
      */
     location.reload();
+  });
+
+  元素.输入法直连开关.addEventListener('change', async () => {
+    const 开启 = 元素.输入法直连开关.checked;
+    状态.输入法直连 = 开启;
+    await 保存设置({ 输入法直连: 开启 });
+    提示(开启 ? '输入法直连已开启，可以试着用中文输入法打字了' : '输入法直连已关闭', '成功');
   });
 
   元素.剪贴板同步开关.addEventListener('change', () =>
@@ -2271,7 +2545,10 @@ async function 启动() {
   绑定添加设备();
   绑定声音开关();
   绑定更新();
+  处理按钮焦点();
+  绑定工具按钮();
   初始化键鼠直连();
+  初始化输入法直连();
 
   // 语言最先应用：后面的提示、列表都应该是目标语言
   await 初始化语言();

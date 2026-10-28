@@ -1,45 +1,45 @@
 {
-    "name": "aoid",
-    "productName": "Aoid",
-    "version": "0.7.0-beta.2",
-    "description": "轻量的 Windows 电脑控制手机工具，基于 scrcpy 服务端。实时画面、跟手触控、中文输入、无线调试。",
-    "license": "MIT",
-    "author": "l-xyzz",
-    "private": false,
-    "main": "src/main/index.js",
-    "scripts": {
-        "start": "electron .",
-        "dev": "electron . --dev",
-        "icons": "node scripts/make-icons.mjs",
-        "bundle:platform-tools": "node scripts/bundle-tools.mjs",
-        "dist": "electron-builder --win --x64",
-        "dist:dir": "electron-builder --win --x64 --dir",
-        "lint": "node scripts/check.mjs",
-        "fetch:server": "node scripts/fetch-scrcpy-server.mjs",
-        "fetch:runtime": "node scripts/fetch-scrcpy-runtime.mjs",
-        "dist:safe": "node scripts/build-local.mjs",
-        "bundle:tools": "node scripts/bundle-tools.mjs"
-    },
-    "engines": {
-        "node": ">=20"
-    },
-    "devDependencies": {
-        "electron": "45.0.0",
-        "electron-builder": "26.18.0"
-    },
-    "repository": {
-        "type": "git",
-        "url": "https://github.com/l-xyzz/Aoid.git"
-    },
-    "keywords": [
-        "scrcpy",
-        "android",
-        "remote-control",
-        "usb",
-        "electron"
-    ],
-    "bugs": {
-        "url": "https://github.com/l-xyzz/Aoid/issues"
-    },
-    "homepage": "https://github.com/l-xyzz/Aoid#readme"
+  "name": "aoid",
+  "productName": "Aoid",
+  "version": "1.0.0",
+  "description": "轻量的 Windows 电脑控制手机工具，基于 scrcpy 服务端。实时画面、跟手触控、中文输入、无线调试。",
+  "license": "MIT",
+  "author": "l-xyzz",
+  "private": false,
+  "main": "src/main/index.js",
+  "scripts": {
+    "start": "electron .",
+    "dev": "electron . --dev",
+    "icons": "node scripts/make-icons.mjs",
+    "bundle:platform-tools": "node scripts/bundle-tools.mjs",
+    "dist": "electron-builder --win --x64",
+    "dist:dir": "electron-builder --win --x64 --dir",
+    "lint": "node scripts/check.mjs",
+    "fetch:server": "node scripts/fetch-scrcpy-server.mjs",
+    "fetch:runtime": "node scripts/fetch-scrcpy-runtime.mjs",
+    "dist:safe": "node scripts/build-local.mjs",
+    "bundle:tools": "node scripts/bundle-tools.mjs"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "devDependencies": {
+    "electron": "45.0.0",
+    "electron-builder": "26.18.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/l-xyzz/Aoid.git"
+  },
+  "keywords": [
+    "scrcpy",
+    "android",
+    "remote-control",
+    "usb",
+    "electron"
+  ],
+  "bugs": {
+    "url": "https://github.com/l-xyzz/Aoid/issues"
+  },
+  "homepage": "https://github.com/l-xyzz/Aoid#readme"
 }

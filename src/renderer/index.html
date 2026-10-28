@@ -111,36 +111,61 @@
             </dl>
           </section>
 
-          <section class="面板 快捷键面板">
+          <section class="面板" id="播放面板" hidden>
             <div class="面板标题">
-              <h2>快捷键</h2>
-              <button class="文字按钮" id="打开快捷键设置">自定义</button>
+              <h2>正在播放</h2>
+              <span class="小标记" id="播放来源">—</span>
             </div>
-            <div class="按键网格">
-              <button class="按键" data-act="back"><kbd>Esc</kbd>返回</button>
-              <button class="按键" data-act="home"><kbd>中键</kbd>主页</button>
-              <button class="按键" data-act="task"><kbd>Tab</kbd>任务</button>
-              <button class="按键" data-act="rotate">旋转</button>
-              <button class="按键" data-act="notif">通知栏</button>
-              <button class="按键" data-act="settings">控制中心</button>
+            <div class="播放信息">
+              <div class="播放标题" id="播放标题">—</div>
+              <div class="播放作者" id="播放作者">—</div>
             </div>
-            <p class="辅助说明">快捷键只在窗口获得焦点时生效，会覆盖原本的按键操作。</p>
+            <div class="播放控制">
+              <button class="播放按钮" data-media="previous" aria-label="上一首">
+                <svg viewBox="0 0 16 16" fill="currentColor"><path d="M4 3h1.6v10H4zM13 3v10L6.2 8z" /></svg>
+              </button>
+              <button class="播放按钮 主" data-media="toggle" aria-label="播放/暂停">
+                <svg id="播放图标" viewBox="0 0 16 16" fill="currentColor"><path d="M5 3l8 5-8 5z" /></svg>
+              </button>
+              <button class="播放按钮" data-media="next" aria-label="下一首">
+                <svg viewBox="0 0 16 16" fill="currentColor"><path d="M12 3h-1.6v10H12zM3 3v10l6.8-5z" /></svg>
+              </button>
+            </div>
           </section>
 
+
+          <!-- 外设：点一下弹出独立窗口，不在右栏展开 -->
+          <!--
+            更多功能：把「外设」和工具窗口合并成一个入口。
+            外设（摄像头/麦克风）本来就是独立窗口，再单开一个按钮属于重复，
+            统一从这里的「更多功能」进，菜单位置更清楚。
+          -->
           <section class="面板">
-            <div class="面板标题"><h2>文字输入</h2></div>
-            <form class="输入行" id="文字表单">
-              <input
-                type="text"
-                id="文字输入"
-                class="输入框"
-                placeholder="回车发送到手机输入框"
-                autocomplete="off"
-                spellcheck="false"
-              />
-              <button type="submit" class="发送按钮" aria-label="发送">→</button>
-            </form>
-            <p class="辅助说明">直接投递到手机当前聚焦的输入框；没有输入框时会自动复制到剪贴板。</p>
+            <div class="面板标题">
+              <h2>更多功能</h2>
+              <span class="小标记" id="更多状态">—</span>
+            </div>
+            <p class="设置说明">应用管理、进程、文件、ADB 控制台，以及把手机当作摄像头和麦克风。</p>
+            <button class="按钮 主 宽按钮" id="打开更多功能">打开更多功能</button>
+          </section>
+
+          <!-- 声音输出：电脑播放时手机会自动静音 -->
+          <section class="面板" id="声音面板">
+            <div class="面板标题">
+              <h2>声音</h2>
+              <span class="小标记" id="声音说明">—</span>
+            </div>
+
+            <label class="开关项" id="电脑发声项">
+              <span class="开关项文字">
+                <span class="开关项名">在电脑上播放声音</span>
+                <span class="开关项注">开启后手机自动静音</span>
+              </span>
+              <span class="开关">
+                <input type="checkbox" id="电脑发声开关" />
+                <span class="开关块"></span>
+              </span>
+            </label>
           </section>
         </aside>
 
@@ -182,57 +207,6 @@
         <!-- ============ 右栏：实时信息与控制 ============ -->
         <aside class="侧栏 右栏">
           <!-- 正在播放 -->
-          <section class="面板" id="播放面板" hidden>
-            <div class="面板标题">
-              <h2>正在播放</h2>
-              <span class="小标记" id="播放来源">—</span>
-            </div>
-            <div class="播放信息">
-              <div class="播放标题" id="播放标题">—</div>
-              <div class="播放作者" id="播放作者">—</div>
-            </div>
-            <div class="播放控制">
-              <button class="播放按钮" data-media="previous" aria-label="上一首">
-                <svg viewBox="0 0 16 16" fill="currentColor"><path d="M4 3h1.6v10H4zM13 3v10L6.2 8z" /></svg>
-              </button>
-              <button class="播放按钮 主" data-media="toggle" aria-label="播放/暂停">
-                <svg id="播放图标" viewBox="0 0 16 16" fill="currentColor"><path d="M5 3l8 5-8 5z" /></svg>
-              </button>
-              <button class="播放按钮" data-media="next" aria-label="下一首">
-                <svg viewBox="0 0 16 16" fill="currentColor"><path d="M12 3h-1.6v10H12zM3 3v10l6.8-5z" /></svg>
-              </button>
-            </div>
-          </section>
-
-
-          <!-- 外设：点一下弹出独立窗口，不在右栏展开 -->
-          <section class="面板" id="更多面板">
-            <div class="面板标题">
-              <h2>外设</h2>
-              <span class="小标记" id="更多状态">—</span>
-            </div>
-            <p class="设置说明">把手机当作电脑的摄像头和麦克风。</p>
-            <button class="按钮 主 宽按钮" id="打开更多窗口">打开控制面板</button>
-          </section>
-
-          <!-- 声音输出：电脑播放时手机会自动静音 -->
-          <section class="面板" id="声音面板">
-            <div class="面板标题">
-              <h2>声音</h2>
-              <span class="小标记" id="声音说明">—</span>
-            </div>
-
-            <label class="开关项" id="电脑发声项">
-              <span class="开关项文字">
-                <span class="开关项名">在电脑上播放声音</span>
-                <span class="开关项注">开启后手机自动静音</span>
-              </span>
-              <span class="开关">
-                <input type="checkbox" id="电脑发声开关" />
-                <span class="开关块"></span>
-              </span>
-            </label>
-          </section>
           <!-- 音量与亮度 -->
           <section class="面板">
             <div class="面板标题">
@@ -269,9 +243,41 @@
             <div class="快捷动作">
               <button class="次级按钮" id="保存截图">保存截图</button>
               <button class="次级按钮" id="复制截图">复制画面</button>
+            <button class="次级按钮" id="录屏">开始录屏</button>
             </div>
           </section>
 
+          <section class="面板 快捷键面板">
+            <div class="面板标题">
+              <h2>快捷键</h2>
+              <button class="文字按钮" id="打开快捷键设置">自定义</button>
+            </div>
+            <div class="按键网格">
+              <button class="按键" data-act="back"><kbd>Esc</kbd>返回</button>
+              <button class="按键" data-act="home"><kbd>中键</kbd>主页</button>
+              <button class="按键" data-act="task"><kbd>Tab</kbd>任务</button>
+              <button class="按键" data-act="rotate">旋转</button>
+              <button class="按键" data-act="notif">通知栏</button>
+              <button class="按键" data-act="settings">控制中心</button>
+            </div>
+            <p class="辅助说明">快捷键只在窗口获得焦点时生效，会覆盖原本的按键操作。</p>
+          </section>
+
+          <section class="面板">
+            <div class="面板标题"><h2>文字输入</h2></div>
+            <form class="输入行" id="文字表单">
+              <input
+                type="text"
+                id="文字输入"
+                class="输入框"
+                placeholder="回车发送到手机输入框"
+                autocomplete="off"
+                spellcheck="false"
+              />
+              <button type="submit" class="发送按钮" aria-label="发送">→</button>
+            </form>
+            <p class="辅助说明">直接投递到手机当前聚焦的输入框；没有输入框时会自动复制到剪贴板。</p>
+          </section>
         </aside>
       </main>
 
@@ -359,6 +365,21 @@
               </p>
 
               <div class="快捷键列表" id="快捷键列表"></div>
+              <div class="设置项">
+                <div class="设置项文字">
+                  <div class="设置项名">输入法直连（试验）</div>
+                  <div class="设置项说明">
+                    开启后可以用电脑自己的输入法打字，选完词整段送进手机。
+                    英文和数字直接键入；中文走剪贴板粘贴，兼容性最好。
+                    只在焦点位于手机画面时生效，平时在电脑上打字不受影响。
+                  </div>
+                </div>
+                <label class="开关">
+                  <input type="checkbox" id="输入法直连开关" />
+                  <span class="开关轨道"></span>
+                </label>
+              </div>
+
 
               <button class="次级按钮" id="快捷键恢复默认">恢复默认绑定</button>
 
@@ -600,5 +621,19 @@
 
       import('./js/app.js').catch(显示启动错误);
     </script>
-  </body>
+  
+    <!--
+      输入法代理：一个不可见的可编辑元素。
+      鼠标在画面上按下时把焦点交给它，电脑输入法才会挂到页面上，
+      用户才能用自己熟悉的输入法打字。文字通过 compositionend 整段取走。
+    -->
+    <div
+      id="输入法代理"
+      contenteditable="true"
+      spellcheck="false"
+      autocomplete="off"
+      aria-hidden="true"
+    ></div>
+
+</body>
 </html>

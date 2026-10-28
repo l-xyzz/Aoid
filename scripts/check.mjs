@@ -72,15 +72,43 @@ const 脚本列表 = [
   'src/main/wireless.js',
   'src/main/languages.js',
   'src/main/updater.js',
+  'src/main/ipc/ime.js',
+  'src/main/ipc/tools.js',
+  'src/main/ipc/recorder.js',
+  'src/main/ipc/peripherals.js',
   'src/renderer/js/app.js',
   'src/renderer/js/markdown.js',
   'src/renderer/js/i18n.js',
+  'src/renderer/js/tools.js',
   'src/renderer/js/player.js',
   'src/renderer/js/shortcuts-ui.js',
   'src/renderer/js/features.js',
   'scripts/notify.mjs',
   'scripts/build-local.mjs',
 ];
+
+/** 内置文档：不能在脚本列表里做语法检查（它们是 Markdown），单独查存在性和非空 */
+const 文档列表 = [
+  'README.md',
+  'README.en.md',
+  'PRIVACY.md',
+  'PRIVACY.en.md',
+  'THIRD-PARTY-NOTICES.md',
+  'THIRD-PARTY-NOTICES.en.md',
+  'LICENSE',
+  'CHANGELOG.md',
+];
+
+for (const 相对 of 文档列表) {
+  const 全路径 = path.join(根目录, 相对);
+  if (!fs.existsSync(全路径)) {
+    错误列表.push('缺少文档 ' + 相对);
+    continue;
+  }
+  if (fs.statSync(全路径).size < 20) {
+    错误列表.push('文档内容过短 ' + 相对);
+  }
+}
 
 /** 乱码特征串（UTF-8 被按 GBK 解码后的典型产物） */
 const 乱码特征 = ['锟斤拷', '鍣', '宸叉墦', '鎾斁', '鐨'];

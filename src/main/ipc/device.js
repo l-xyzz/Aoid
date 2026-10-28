@@ -197,6 +197,8 @@ function 注册设备接口() {
 
     const 有输入框 = await 检查输入焦点();
     if (!有输入框) {
+      // 标记成自写：剪贴板同步循环会跳过它，不会把用户真正的剪贴板顶掉
+      状态.自写剪贴板 = 内容;
       require('electron').clipboard.writeText(内容);
       return { 已输入: false, 原因: '手机当前没有聚焦的输入框', 已复制: true, 长度: 内容.length };
     }
