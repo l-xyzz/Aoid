@@ -74,6 +74,35 @@ if (!app.requestSingleInstanceLock()) {
   app.on('second-instance', () => {
     显示主窗口();
   });
+/*
+ * 全局异常兜底。
+ *
+ * 打包版出现过「启动后进程静默退出、没有任何输出」的情况——
+ * GUI 程序没有控制台，异常信息直接就没了，根本没法排查。
+ * 这里把未捕获异常写进用户数据目录的 boot-error.log，至少留下现场。
+ */
+function 记录启动错误(类型, 错误) {
+  try {
+    const 日志目录 = app.getPath('userData');
+    const 路径 = require('node:path').join(日志目录, 'boot-error.log');
+    const 时间 = new Date().toISOString();
+    const 文本 =
+      '[' + 时间 + '] ' + 类型 + '\n' +
+      (错误 && (错误.stack || 错误.message || String(错误))) + '\n\n';
+    require('node:fs').appendFileSync(路径, 文本, 'utf8');
+  } catch {
+    // 连日志都写不了就没办法了
+  }
+}
+
+process.on('uncaughtException', (错误) => {
+  记录启动错误('uncaughtException', 错误);
+});
+
+process.on('unhandledRejection', (错误) => {
+  记录启动错误('unhandledRejection', 错误);
+});
+
   app.whenReady().then(初始化);
 }
 

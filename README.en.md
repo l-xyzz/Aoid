@@ -10,6 +10,8 @@ Aoid is a lightweight desktop app that mirrors your phone's screen and lets you 
 
 > ⚠️ **Early development.** Aoid is a beta with known rough edges. Not recommended for production use yet — but feedback is very welcome.
 
+![Aoid interface](docs/screenshot.en.png)
+
 ---
 
 ## Features

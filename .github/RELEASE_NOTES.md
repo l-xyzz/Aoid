@@ -1,79 +1,124 @@
-# Aoid 0.7.0-beta.2
+# Aoid 1.0.0
 
-> ⚠️ **这是开发阶段的测试版，存在较多缺陷，不建议用于生产环境。**
-> 欢迎反馈，后续会持续接受意见、修复问题、优化体验。
+**First stable release.** Control your Android phone from your Windows PC over USB — live screen, responsive touch, text input, and a full toolbox.
 
-用数据线把手机接到电脑上，在一个窗口里看画面、点屏幕、打字。
-免安装、不需要在手机里装任何应用，也不需要 root。
-
----
-
-## 下载
-
-| 文件 | 用途 | 说明 |
-| --- | --- | --- |
-| `Aoid-0.7.0-beta.2-Setup.exe` | **安装包**（推荐） | 向导式安装，自动创建快捷方式，自带卸载程序 |
-| `Aoid-0.7.0-beta.2-Portable.exe` | 便携版 | 单文件，双击即用，不写注册表 |
-| `Aoid-0.7.0-beta.2-win-x64.zip` | 免安装目录 | 解压即用 |
-
-**系统要求**：Windows 10 / 11（64 位）· 手机 Android 5.0+
-
-> **首次运行会被 Windows 拦截**，提示「Windows 已保护你的电脑」。
-> 这是没有代码签名证书的必然结果：点「**更多信息**」→「**仍要运行**」即可。
-
----
-
-## 本版功能
-
-- **实时画面** —— USB 传输 H.264，WebCodecs 硬解，实测 30~60fps
-- **跟手触控** —— 按下、拖动、长按、滚轮即时转发
-- **中文输入** —— 支持中文，走剪贴板粘贴，兼容性最好
-- **常用按键** —— 返回 / 主页 / 任务 / 旋转 / 通知栏 / 控制中心，可自定义快捷键
-- **无线调试** —— 配对码或 IP 直连，配对后脱离数据线
-- **音量与亮度** —— 实时双向同步
-- **截图** —— 保存手机原始分辨率无损 PNG，或复制到剪贴板
-- **更多功能** —— 手机当电脑摄像头 / 麦克风，投屏到 OBS 虚拟摄像头
-- **剪贴板同步** —— 默认关闭，开启后双向实时同步
-
-## 已知问题
-
-| 问题 | 现状 |
+| | |
 | --- | --- |
-| 画面偶发卡顿 / 撕裂 | 持续优化中，切换分辨率时最明显 |
-| 横竖屏热切换需要几秒恢复 | 已做锁帧 + 后台重连，期间画面短暂静止 |
-| 无线连接稳定性 | 弱网下容易断，断线会自动重连 3 次 |
-| 麦克风 / 虚拟摄像头 | 可用但未充分测试，需 VB-Cable / OBS |
-| 代码签名 | 无，首次运行有 SmartScreen 提示 |
-| 平台 | 仅 Windows x64 |
-
-## 使用条件
-
-- 手机需开启「开发者选项 → USB 调试」，插线后授权
-- 无线调试需 Android 11 以上，且手机与电脑在同一 Wi-Fi
-- 麦克风功能需安装 [VB-Cable](https://vb-audio.com/Cable/) 虚拟声卡（可选）
-- 虚拟摄像头需安装 [OBS Studio](https://obsproject.com/)（可选）
-
-## 反馈
-
-遇到问题请先看 [已知问题](https://github.com/l-xyzz/Aoid#已知问题)，
-再按 [Issue 模板](https://github.com/l-xyzz/Aoid/issues/new/choose) 反馈。
-**请务必写明手机型号与 Android 版本**，这对定位设备相关问题非常关键。
+| 🖥 Platform | Windows 10 / 11 (64-bit) |
+| 📱 Phone | Android 5.0+ |
+| 📦 Size | ~115–135 MB |
 
 ---
 
-## 安装包说明
+## Download
 
-- 默认装到 `%LOCALAPPDATA%\Programs\Aoid`，当前用户安装，**不弹 UAC**
-- 安装时可自选目录
-- 卸载：设置 → 应用 → 已安装的应用，或开始菜单「卸载 Aoid」
-- 卸载会清理安装目录、快捷方式和注册表，但**保留用户数据**（`%APPDATA%\Aoid`），重装可继续使用
+| File | Purpose | Notes |
+| --- | --- | --- |
+| **`Aoid-1.0.0-Setup.exe`** | **Installer** (recommended) | Guided install, creates shortcuts, includes an uninstaller |
+| `Aoid-1.0.0-Portable.exe` | Portable | Single file, runs on double-click, writes no registry keys |
+| `Aoid-1.0.0-win-x64.zip` | Unpacked folder | Extract and run; handy for internal distribution |
 
-## 隐私
+> **Windows will warn you on first launch** — "Windows protected your PC". This is expected without a code-signing certificate. Click **More info** → **Run anyway**.
 
-完全在本机运行，不连任何服务器，不收集任何数据。详见 [PRIVACY.md](https://github.com/l-xyzz/Aoid/blob/main/PRIVACY.md)。
+---
 
-## 许可
+## What's new in 1.0.0
 
-代码以 [MIT](https://github.com/l-xyzz/Aoid/blob/main/LICENSE) 发布。
-第三方组件（scrcpy / adb / SDL2 / FFmpeg / Electron）遵循各自许可，
-详见 [THIRD-PARTY-NOTICES.md](https://github.com/l-xyzz/Aoid/blob/main/THIRD-PARTY-NOTICES.md)。
+This release goes from a beta to something you can hand to another person.
+
+### Auto-update
+
+Aoid now checks GitHub Releases, shows you the current version, the new version and the full changelog, and only downloads when you confirm.
+
+- **Portable build** — downloads the new exe, replaces itself, and restarts
+- **Installer build** — downloads the setup and hands off to the installer
+
+If GitHub is unreachable, Aoid pings Baidu to tell you which problem you actually have: *no network at all*, or *network works but GitHub is blocked*.
+
+### More features (a whole new window)
+
+A separate toolbox window with five pages:
+
+- **App manager** — list, launch, stop and uninstall apps; install APKs from your PC. Handles `.apk.1` files that chat apps rename.
+- **Process manager** — see every process sorted by memory, kill what you need to.
+- **File manager** — phone on the left, PC on the right. Remembers your last location, and you can switch between any drive.
+- **Peripherals** — use the phone as a webcam or microphone.
+- **ADB console** — a real terminal: command history with ↑/↓, Tab completion, syntax highlighting, selectable output.
+
+### Screen recording
+
+Record the phone screen to MP4 straight from the main window.
+
+### Keyboard and mouse passthrough
+
+Your PC's mouse and keyboard drive the phone directly — movement, clicks, scroll wheel, and keystrokes.
+
+### IME passthrough (experimental)
+
+Type with your own PC input method. When you pick a candidate, the whole word goes to the phone. English typing is unaffected.
+
+### Multi-language
+
+English and Simplified Chinese are built in. Any other language can be loaded from a JSON file you place in the data folder — you can generate one with any LLM.
+
+English documentation (README, privacy policy, third-party notices) is included and used automatically when the interface is not Chinese.
+
+---
+
+## Fixes in this release
+
+| Issue | Root cause |
+| --- | --- |
+| Documents wouldn't open | Launch script wasn't copying the markdown files |
+| Clicks on settings reached the phone | Touch handler didn't check whether an overlay was open |
+| Clipboard sync broken three ways | Missing echo guards and a self-written clipboard polluting the user's real one |
+| Dragging stalled outside the frame | Out-of-bounds coordinates were dropped instead of clamped |
+| Esc/Tab hijacked by UI controls | Default browser behaviour wasn't prevented |
+| Document dialog appeared bottom-right | The entrance animation overrode the centring transform |
+| File manager showed empty drives | Drive root was misread as the drive-list view |
+| Peripherals page threw an error | iframe can't access the preload bridge |
+| Documents couldn't scroll | A later stylesheet overrode the flex scrolling properties |
+
+---
+
+## Requirements
+
+- Windows 10 / 11, 64-bit
+- Android 5.0 or newer
+- USB debugging enabled on the phone (Settings → About phone → tap *Build number* 7× → Developer options → USB debugging)
+
+Full instructions are inside the app: **Settings → About → User guide**.
+
+---
+
+## Known limitations
+
+- Windows x64 only; macOS and Linux are not planned for now
+- Wireless debugging can drop on weak networks (auto-retries 3 times)
+- Camera and microphone features work but have not been tested across many devices
+- Rotation takes a second or two to recover
+- No code signing, so SmartScreen will warn on first run
+
+---
+
+## Feedback
+
+Bug reports and feature requests are very welcome — this is still an early-stage project and device-specific issues are hard to catch alone.
+
+When reporting, please include your **phone model, Android version, connection type (USB / wireless), and reproduction steps**.
+
+- 🐛 [Report a bug](https://github.com/l-xyzz/Aoid/issues/new/choose)
+- 💡 [Request a feature](https://github.com/l-xyzz/Aoid/issues/new/choose)
+
+---
+
+## Privacy
+
+Aoid runs entirely on your machine. No telemetry, no analytics, no accounts.
+See [PRIVACY.md](https://github.com/l-xyzz/Aoid/blob/main/PRIVACY.md).
+
+## License
+
+Source code is [MIT](https://github.com/l-xyzz/Aoid/blob/main/LICENSE).
+Bundled third-party binaries (scrcpy, adb, SDL2, FFmpeg, Electron) follow their own licences —
+see [THIRD-PARTY-NOTICES.md](https://github.com/l-xyzz/Aoid/blob/main/THIRD-PARTY-NOTICES.md).

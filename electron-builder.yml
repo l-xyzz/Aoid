@@ -34,6 +34,9 @@ files:
   - 'README.en.md'
   - 'PRIVACY.en.md'
   - 'THIRD-PARTY-NOTICES.en.md'
+  # 界面截图（README 与 README.en 各自引用一份）
+  - 'docs/screenshot.png'
+  - 'docs/screenshot.en.png'
 
 # scrcpy 服务端需要在运行时读取，因此放在 asar 之外
 extraResources:

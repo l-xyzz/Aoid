@@ -30,6 +30,7 @@ const 本地release = path.join(本地根, 'release');
 const 复制清单 = [
   'src',
   'resources',
+  'docs',
   'vendor',
   'scrcpy-runtime',
   'platform-tools',
@@ -37,6 +38,12 @@ const 复制清单 = [
   'package.json',
   'electron-builder.yml',
   'README.md',
+  // 英文文档也要带上：electron-builder.yml 的 files 里列了它们，
+  // 本地构建目录里没有的话，打出来的 asar 里就缺这几份，
+  // 界面语言不是中文时文档会读不到。
+  'README.en.md',
+  'PRIVACY.en.md',
+  'THIRD-PARTY-NOTICES.en.md',
   'CHANGELOG.md',
   'LICENSE',
   'PRIVACY.md',
