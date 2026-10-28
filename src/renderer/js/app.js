@@ -519,7 +519,20 @@ function 界面_连接中(显示, 文字 = '正在建立通道') {
 /* 触控                                                                */
 /* ------------------------------------------------------------------ */
 
-function 换算坐标(事件) {
+/**
+ * 把鼠标位置换算成手机屏幕坐标。
+ *
+ * 关键：**超出画面边界时钳制到边缘，而不是返回 null**。
+ *
+ * 原来的实现一旦检测到 x/y 越界就 return null，调用方只能丢弃这次事件，
+ * 于是拖动到画面外面时手指就"停住"了，必须拖回画面内才继续响应——
+ * 这就是用户说的"超出边框后会停顿"。
+ *
+ * 现在改成把坐标夹在 [0, 宽] / [0, 高] 之间：
+ * 鼠标拖出画面时，手机上的手指会贴着边缘继续移动，
+ * 手感跟真实触摸屏一致（手指划出屏幕边缘时坐标也是贴边的）。
+ */
+function 换算坐标(事件, 允许越界 = false) {
   const 矩形 = 元素.触控层.getBoundingClientRect();
   const 宽 = 元素.画布.width;
   const 高 = 元素.画布.height;
@@ -533,8 +546,15 @@ function 换算坐标(事件) {
 
   const x = (事件.clientX - 左) / 缩放;
   const y = (事件.clientY - 上) / 缩放;
-  if (x < 0 || y < 0 || x > 宽 || y > 高) return null;
-  return { x: Math.min(宽, Math.round(x)), y: Math.min(高, Math.round(y)) };
+
+  // 拖动中（允许越界）一律钳制到边缘；非拖动时越界视为点在画面外，不处理
+  const 越界 = x < 0 || y < 0 || x > 宽 || y > 高;
+  if (越界 && !允许越界) return null;
+
+  return {
+    x: Math.max(0, Math.min(宽, Math.round(x))),
+    y: Math.max(0, Math.min(高, Math.round(y))),
+  };
 }
 
 /* ------------------------------------------------------------------ */
@@ -648,9 +668,18 @@ function 绑定触控() {
     window.deck.触控.按下(坐标.x, 坐标.y).catch(() => {});
   });
 
-  层.addEventListener('pointermove', (事件) => {
+  /*
+   * 拖动中允许坐标越界（钳制到边缘）。
+   *
+   * 同时把 pointermove 挂到 window 上而不是触控层：
+   * 虽然 pointerdown 里已经 setPointerCapture，但指针捕获在某些情况下
+   * （例如拖到窗口外面、切到别的应用再回来）会丢失，
+   * 挂 window 能保证手指/鼠标在哪都能继续收到移动事件。
+   */
+  window.addEventListener('pointermove', (事件) => {
     if (!状态.指针按下 || !状态.已连接) return;
-    const 坐标 = 换算坐标(事件);
+    // 拖动中允许越界：坐标会被钳制到手机屏幕边缘，不会中断
+    const 坐标 = 换算坐标(事件, true);
     if (!坐标) return;
 
     if (状态.上次坐标) {
@@ -676,6 +705,13 @@ function 绑定触控() {
     window.deck.触控.移动(坐标.x, 坐标.y).catch(() => {});
   });
 
+  /*
+   * 抬起：挂在 window 上而不是触控层。
+   *
+   * 拖动到画面外面再松手时，事件目标是画面外的元素，
+   * 绑在层上的监听收不到，手机上的手指就会一直"按着"不抬起来。
+   * 挂 window 保证无论在哪松手都能收尾。
+   */
   const 抬起 = (事件) => {
     if (!状态.指针按下) return;
     状态.指针按下 = false;
@@ -683,14 +719,28 @@ function 绑定触控() {
     清理动效();
     层.classList.remove('按下中');
     层.classList.remove('拖动中');
-    const 坐标 = 换算坐标(事件) || 状态.上次坐标;
+    // 允许越界：拖到画面外松手时，用边缘坐标抬起，避免手机端卡住
+    const 坐标 = 换算坐标(事件, true) || 状态.上次坐标;
     状态.上次坐标 = null;
     状态.已拖动 = false;
     if (坐标 && 状态.已连接) window.deck.触控.抬起(坐标.x, 坐标.y).catch(() => {});
   };
 
-  层.addEventListener('pointerup', 抬起);
-  层.addEventListener('pointercancel', 抬起);
+  window.addEventListener('pointerup', 抬起);
+  window.addEventListener('pointercancel', 抬起);
+  // 窗口失焦（例如 Alt+Tab 切走）时也要收尾，否则手机端会一直按着
+  window.addEventListener('blur', () => {
+    if (!状态.指针按下) return;
+    状态.指针按下 = false;
+    clearTimeout(状态.长按定时);
+    清理动效();
+    层.classList.remove('按下中');
+    层.classList.remove('拖动中');
+    const 坐标 = 状态.上次坐标;
+    状态.上次坐标 = null;
+    状态.已拖动 = false;
+    if (坐标 && 状态.已连接) window.deck.触控.抬起(坐标.x, 坐标.y).catch(() => {});
+  });
 
   层.addEventListener(
     'wheel',
@@ -707,19 +757,6 @@ function 绑定触控() {
     },
     { passive: false },
   );
-
-  window.addEventListener('pointerup', () => {
-    if (!状态.指针按下) return;
-    状态.指针按下 = false;
-    clearTimeout(状态.长按定时);
-    清理动效();
-    层.classList.remove('按下中');
-    层.classList.remove('拖动中');
-    const 坐标 = 状态.上次坐标;
-    if (坐标) window.deck.触控.抬起(坐标.x, 坐标.y).catch(() => {});
-    状态.上次坐标 = null;
-    状态.已拖动 = false;
-  });
 }
 
 /** 清掉长按环和拖动光晕 */
