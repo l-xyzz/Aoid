@@ -115,6 +115,45 @@
 
 ---
 
+## 从源码构建
+
+如果你想自己编译，或者想改代码：
+
+```bash
+git clone https://github.com/l-xyzz/Aoid.git
+cd Aoid
+npm install
+npm run fetch:runtime   # 下载 scrcpy 运行组件（约 18MB）
+npm run bundle:tools    # 下载 adb（约 8MB）
+npm start
+```
+
+需要 Node.js 20 以上。
+
+<details>
+<summary><b>国内网络下载慢</b></summary>
+
+仓库里的 `.npmrc` 没有写死镜像源，以保证国内外都能正常安装。
+如果你在国内，可以临时设置环境变量：
+
+```bash
+npm config set registry https://registry.npmmirror.com
+set ELECTRON_MIRROR=https://npmmirror.com/mirrors/electron/
+set ELECTRON_BUILDER_BINARIES_MIRROR=https://npmmirror.com/mirrors/electron-builder-binaries/
+```
+
+</details>
+
+打包：
+
+```bash
+npm run dist:safe   # 产出安装包 + 便携版 + zip
+```
+
+完整说明见 [贡献指南的打包一节](https://github.com/l-xyzz/Aoid/blob/main/CONTRIBUTING.md#打包)。
+
+---
+
 ## 隐私
 
 完全在本机运行，不连任何服务器，不收集任何数据。
