@@ -37,6 +37,78 @@ npm run lint       # 主进程语法检查
   升级时运行 `node scripts/fetch-scrcpy-server.mjs --update`，它会校验 SHA-256。
 - 新增依赖前请想清楚：这个项目刻意保持「零运行时依赖」，只在开发期用 Electron 与 electron-builder。
 
+## 打包
+
+### 命令
+
+```bash
+npm run dist:safe   # 推荐：一次产出安装包 + 便携版 + zip
+npm run dist        # 直接调 electron-builder，只有安装包 + 便携版
+npm run dist:dir    # 只生成免安装目录 win-unpacked，不封装（最快，适合调试）
+```
+
+首次打包 `nsis` / `portable` 目标时，electron-builder 需要下载 NSIS 工具链（约 2MB）。
+若访问 GitHub Releases 受限，可手动下载后放进缓存：
+
+```
+%LOCALAPPDATA%\electron-builder\Cache\downloads\
+  nsis-3.0.4.1.7z
+  nsis-resources-3.4.1.7z
+```
+
+来源：`https://github.com/electron-userland/electron-builder-binaries/releases/download/<标签>/<文件名>`
+
+### 产物
+
+| 文件 | 用途 | 说明 |
+| --- | --- | --- |
+| `Aoid-<版本>-Setup.exe` | 安装包 | NSIS 向导式，自带卸载程序，建快捷方式 |
+| `Aoid-<版本>-Portable.exe` | 便携版 | 单文件，不写注册表 |
+| `Aoid-<版本>-win-x64.zip` | 免安装目录 | 解压即用 |
+
+产物默认输出到 `release/`。
+
+### 重要：不要在网络盘上打包或运行
+
+**Electron 无法从网络驱动器启动**。如果项目放在映射的 Z: 盘：
+
+- 产物落在 Z 盘 → 双击 exe 毫无反应、不报错、不生成日志
+- `npm run dist:safe` 正是为此写的：它先把项目复制到 `%LOCALAPPDATA%\AoidBuild`，
+  用 junction 链接 `node_modules`，在本地磁盘完成构建，再把产物复制回来
+
+手动打包时如果项目在网络盘，请自行把产物移到本地磁盘再验证。
+
+### 打包配置要点
+
+`electron-builder.yml` 里几个不能随便动的地方：
+
+- `files` 必须包含 `README.md` / `CHANGELOG.md` / `LICENSE` / `PRIVACY.md` / `THIRD-PARTY-NOTICES.md`
+  —— 应用内「关于」「隐私」页要在运行时读取它们，漏了就会报「文档不存在」
+- `extraResources` 把 `vendor/` `scrcpy-runtime/` `platform-tools/` 放在 asar 之外，
+  因为要用 `spawn` 直接执行，asar 内的文件无法被外部进程读取
+- `nsis.perMachine: false` 表示装到当前用户目录，不弹 UAC
+- `nsis.deleteAppDataOnUninstall: false` 表示卸载保留用户设置
+
+### 发布流程
+
+```bash
+# 1. 改 package.json 的 version
+# 2. 打包
+npm run dist:safe
+# 3. 提交并打标签
+git add -A && git commit -m "chore: 发布 <版本>"
+git tag v<版本>
+git push origin main --tags
+# 4. 创建 Release（预发布用 --prerelease）
+gh release create v<版本> --title "Aoid <版本>" --notes-file .github/RELEASE_NOTES.md \
+  --prerelease release/Aoid-<版本>-Setup.exe \
+  release/Aoid-<版本>-Portable.exe \
+  release/Aoid-<版本>-win-x64.zip
+```
+
+> `Aoid.exe` 有 200MB 以上，**不要提交进 Git 仓库**（GitHub 单文件上限 100MB）。
+> 二进制一律走 Release 附件（上限 2GB）。
+
 ## 提交信息
 
 用一句话说明「改了什么、为什么」，例如：

@@ -110,7 +110,7 @@ npm run dist        # 直接调用 electron-builder（不生成 zip）
 `dist:safe` 会先把项目复制到本地磁盘再打包——因为 **Electron 无法从网络驱动器（如 Z:）启动**，
 产物落在网络盘上会导致双击毫无反应。
 
-详细的打包选项、产物说明见 [CONTRIBUTING.md](CONTRIBUTING.md)。
+详细的打包选项、产物说明、发布流程见 [贡献指南的「打包」一节](CONTRIBUTING.md#打包)。
 
 ## 技术路线
 
