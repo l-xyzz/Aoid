@@ -14,6 +14,20 @@ Aoid is a lightweight desktop app that mirrors your phone's screen and lets you 
 
 ---
 
+## Why Aoid instead of plain scrcpy?
+
+scrcpy is excellent, but it is command-line only. Aoid wraps the same server in a **complete desktop app**:
+
+| | scrcpy | **Aoid** |
+| --- | --- | --- |
+| How to use | CLI flags | **Open and go** |
+| Wireless | Type adb yourself | **Pairing wizard** |
+| CJK input | Configure an IME | **Just type** |
+| Shortcuts | Fixed | **Customizable** |
+| Distribution | Build it yourself | **Ready to install** |
+
+One line: **Aoid puts scrcpy's power behind an interface you don't need to read docs for.**
+
 ## Features
 
 - **Live screen mirroring** — H.264 over USB, hardware-decoded via WebCodecs, 30–60 fps
@@ -26,24 +40,6 @@ Aoid is a lightweight desktop app that mirrors your phone's screen and lets you 
 - **Clipboard sync** — optional, bidirectional
 - **Toolbox** — app manager, process manager, two-pane file manager, and a built-in ADB console with autocomplete
 - **Multi-language** — English and Simplified Chinese built in; load your own language pack
-
-## Why Aoid instead of plain scrcpy?
-
-scrcpy is an excellent tool, but it is command-line only. Aoid wraps the same server in a **complete desktop application**:
-
-| | scrcpy | **Aoid** |
-| --- | --- | --- |
-| Interface | Command-line flags | **GUI — open it and go** |
-| Wireless | Type `adb pair` / `adb connect` yourself | **Built-in pairing wizard with IP and code fields** |
-| CJK input | Configure an IME yourself | **Type in the box; Chinese and emoji reach the phone** |
-| File transfer | `adb push` / `adb pull` | **Two-pane file manager, click to transfer** |
-| Debugging | Separate terminal | **Built-in ADB console with completion and highlighting** |
-| Language | English | **English + Chinese, plus loadable language packs** |
-| Shortcuts | Fixed | **Customizable, mouse buttons included** |
-
-In one line: **Aoid puts scrcpy's power behind an interface you do not need to read docs for.**
-
-It also stays small and hackable: **zero runtime npm dependencies**, plain JSON language packs you can generate with any LLM, and an update checker that speaks the public GitHub API.
 
 
 ## Install
@@ -68,6 +64,24 @@ On first launch Windows SmartScreen will warn you — there is no code-signing c
 
 Full instructions are in the app under **Settings → About → User guide**.
 
+<details>
+<summary>⚠️ Known limitations & issues (click to expand)</summary>
+
+Aoid 1.0.0 is usable, but still iterating quickly and refining device compatibility.
+
+| Issue | Status |
+| --- | --- |
+| Occasional stutter / tearing | Worst on resolution changes; being optimized |
+| Rotation takes a few seconds | Frame is frozen and the channel reconnects |
+| Wireless drops on weak networks | Auto-retries 3 times |
+| Camera / microphone | Works, not fully tested; needs VB-Cable or OBS |
+| No code signing | SmartScreen warning on first run |
+| Platform | Windows x64 only |
+
+Please file issues with your **phone model, Android version, and reproduction steps**.
+
+</details>
+
 ## Build from source
 
 ```bash
@@ -80,17 +94,6 @@ npm start
 ```
 
 Requires Node.js 20+. Packaging: `npm run dist:safe` produces the installer, portable build, and zip.
-
-## Known issues
-
-| Issue | Status |
-| --- | --- |
-| Occasional stutter or tearing | Being optimized; worst on resolution changes |
-| Rotation takes a second or two | Frame is frozen and the channel reconnects |
-| Wireless drops on weak networks | Auto-retries 3 times |
-| Camera / microphone | Works, not fully tested |
-| No code signing | SmartScreen warning on first run |
-| Windows x64 only | macOS / Linux not planned yet |
 
 ## How it works
 
