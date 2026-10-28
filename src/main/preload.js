@@ -20,6 +20,13 @@ contextBridge.exposeInMainWorld('deck', {
   应用信息: () => ipcRenderer.invoke('应用:信息'),
   打开链接: (url) => ipcRenderer.invoke('系统:打开链接', { url }),
 
+  /* ---- 多语言 ---- */
+  语言: {
+    列表: () => ipcRenderer.invoke('语言:列表'),
+    读取: (代码) => ipcRenderer.invoke('语言:读取', { 代码 }),
+    打开目录: () => ipcRenderer.invoke('语言:打开目录'),
+  },
+
   /* ---- adb ---- */
   adb: {
     探测: () => ipcRenderer.invoke('adb:探测'),

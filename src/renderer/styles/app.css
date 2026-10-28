@@ -2117,3 +2117,30 @@ select {
   border-radius: 10px;
   box-shadow: 0 8px 24px -8px rgba(0, 0, 0, 0.6);
 }
+/*
+  纵向设置项：说明文字较长、下面还要放按钮时不适合左右分栏，
+  改成上下排列（名字说明在上、操作按钮在下）。
+*/
+.设置项-列 {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 10px;
+}
+
+.设置按钮行 {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.设置按钮行 .次级按钮 {
+  flex: 0 0 auto;
+}
+
+/* 语言目录路径用等宽字体，方便用户复制 */
+#语言目录提示 {
+  font-family: var(--字体-数字);
+  font-size: 11px;
+  word-break: break-all;
+  opacity: 0.75;
+}

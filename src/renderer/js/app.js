@@ -14,6 +14,7 @@ window.__开始加载 = true;
 import { 播放器 } from './player.js';
 import * as 快捷键界面 from './shortcuts-ui.js';
 import { 渲染Markdown } from './markdown.js';
+import { 设置语言 } from './i18n.js';
 
 const $ = (id) => document.getElementById(id);
 
@@ -84,6 +85,9 @@ const 元素 = {
   设置抽屉: $('设置抽屉'),
   关闭设置: $('关闭设置'),
   语言选择: $('语言选择'),
+  打开语言目录: $('打开语言目录'),
+  刷新语言列表: $('刷新语言列表'),
+  语言目录提示: $('语言目录提示'),
   主题选择: $('主题选择'),
   剪贴板同步开关: $('剪贴板同步开关'),
   快捷键列表: $('快捷键列表'),
@@ -1279,6 +1283,80 @@ function 关闭文档() {
   元素.文档对话框.hidden = true;
 }
 
+/**
+ * 初始化多语言。
+ *
+ * 流程：
+ *   1. 读设置里存的语言代码（没存就是 zh-CN）
+ *   2. 让主进程把该语言的语言包读出来
+ *   3. 交给 i18n 模块，由它扫描 DOM 做文本替换
+ *
+ * 语言包加载失败（文件被删了、JSON 写坏了）不会中断启动，
+ * 界面保持中文，同时在设置里提示一下。
+ */
+async function 初始化语言() {
+  let 代码 = 'zh-CN';
+  try {
+    const 设置 = 取值(await window.deck.设置.读取());
+    代码 = 设置.语言 || 'zh-CN';
+  } catch {
+    // 读不到设置就按中文走
+  }
+
+  if (代码 === 'zh-CN') {
+    设置语言('zh-CN', null);
+    await 刷新语言列表();
+    return;
+  }
+
+  try {
+    const 包 = 取值(await window.deck.语言.读取(代码));
+    if (包 && 包.词典) {
+      设置语言(代码, 包.词典);
+    } else {
+      设置语言('zh-CN', null);
+      提示(`语言包 ${代码} 是空的，已回退中文`, '错误');
+    }
+  } catch (错误) {
+    // 语言包坏了：回退中文，但把原因说出来，否则用户会以为设置没生效
+    设置语言('zh-CN', null);
+    提示('语言包加载失败：' + 错误.message, '错误');
+  }
+
+  await 刷新语言列表();
+}
+
+/**
+ * 刷新语言下拉框。
+ *
+ * 列出内置语言 + 用户在数据目录里放的自定义语言。
+ * 自定义语言的名称后面标出来源，方便用户确认自己那份有没有被读到。
+ */
+async function 刷新语言列表() {
+  const 下拉 = 元素.语言选择;
+  if (!下拉) return;
+
+  try {
+    const 列表 = 取值(await window.deck.语言.列表());
+    下拉.replaceChildren();
+
+    for (const 项 of 列表) {
+      const 选项 = document.createElement('option');
+      选项.value = 项.代码;
+      // 自定义语言加个标记，一眼能看出哪几个是自己加的
+      选项.textContent = 项.来源 === '自定义' ? `${项.名称}（自定义）` : 项.名称;
+      下拉.appendChild(选项);
+    }
+
+    // 设置里存的语言若已不存在（用户删了语言包），回落到中文避免空白
+    const 当前 = 状态.设置?.语言 || 'zh-CN';
+    const 存在 = 列表.some((项) => 项.代码 === 当前);
+    下拉.value = 存在 ? 当前 : 'zh-CN';
+  } catch {
+    // 列不出来就保留默认的中文选项
+  }
+}
+
 function 绑定设置() {
   元素.设置按钮.addEventListener('click', () => 打开设置());
   元素.关闭设置.addEventListener('click', 关闭设置);
@@ -1294,7 +1372,18 @@ function 绑定设置() {
     保存设置({ 主题: 元素.主题选择.value });
   });
 
-  元素.语言选择.addEventListener('change', () => 保存设置({ 语言: 元素.语言选择.value }));
+  元素.语言选择.addEventListener('change', async () => {
+    const 代码 = 元素.语言选择.value;
+    await 保存设置({ 语言: 代码 });
+    /*
+     * 直接重新加载界面，而不是就地替换文本。
+     *
+     * 原因：文本替换虽然能改静态文案，但已经渲染出去的动态内容
+     * （提示、设备列表、快捷键名等）仍然是旧语言，两边混在一起很难看。
+     * 重新加载最干净，代价只是一次刷新。
+     */
+    location.reload();
+  });
 
   元素.剪贴板同步开关.addEventListener('change', () =>
     保存设置({ 剪贴板同步: 元素.剪贴板同步开关.checked }),
@@ -1308,6 +1397,25 @@ function 绑定设置() {
     } catch (错误) {
       提示(错误.message, '错误');
     }
+  });
+
+  /* ---- 自定义语言 ---- */
+
+  // 打开语言包目录：顺带生成一份模板，用户可以直接丢给 AI 翻译
+  元素.打开语言目录.addEventListener('click', async () => {
+    try {
+      const 数据 = 取值(await window.deck.语言.打开目录());
+      元素.语言目录提示.textContent = 数据.目录;
+      提示('已打开语言文件夹，里面有一份 _模板.json 可以照着填', '成功');
+    } catch (错误) {
+      提示(错误.message, '错误');
+    }
+  });
+
+  // 重新扫描：用户放进新文件后不必重启应用就能刷出来
+  元素.刷新语言列表.addEventListener('click', async () => {
+    await 刷新语言列表();
+    提示('已重新扫描语言包', '成功');
   });
 
   document.querySelectorAll('[data-doc]').forEach((按钮) => {
@@ -1770,6 +1878,9 @@ async function 启动() {
   绑定设置();
   绑定添加设备();
   绑定声音开关();
+
+  // 语言最先应用：后面的提示、列表都应该是目标语言
+  await 初始化语言();
 
   界面_显示空画面();
 

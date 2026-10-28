@@ -297,9 +297,27 @@
                   <div class="设置项名">语言</div>
                   <div class="设置项说明">界面显示语言</div>
                 </div>
+                <!-- 选项由语言包目录动态填充，见 app.js 的 刷新语言列表() -->
                 <select id="语言选择" class="下拉">
                   <option value="zh-CN">简体中文</option>
                 </select>
+              </div>
+
+              <!-- 自定义语言：让用户用 AI 生成一份对照表放进数据目录 -->
+              <div class="设置项 设置项-列">
+                <div class="设置项文字">
+                  <div class="设置项名">自定义语言</div>
+                  <div class="设置项说明">
+                    Aoid 支持加载第三方语言包。把一个 JSON 文件放进下面的文件夹，重启后在语言列表里选中它即可。
+                    语言包格式是「中文原文 → 译文」的对照表，点「打开语言文件夹」会生成一份模板供你照着填，
+                    也可以直接把模板丢给 AI 让它翻译。
+                  </div>
+                </div>
+                <div class="设置按钮行">
+                  <button class="次级按钮" id="打开语言目录">打开语言文件夹</button>
+                  <button class="次级按钮" id="刷新语言列表">重新扫描语言</button>
+                </div>
+                <p class="设置说明" id="语言目录提示"></p>
               </div>
 
               <div class="设置项">

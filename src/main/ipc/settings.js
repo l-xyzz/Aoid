@@ -9,6 +9,7 @@ const path = require('node:path');
 const { app, shell } = require('electron');
 const { 状态, 注册, 推送, 根目录, 安全文本, 内置工具目录 } = require('../core/context');
 const 快捷键 = require('../shortcuts');
+const 语言 = require('../languages');
 const { 连接设备 } = require('../session/session');
 
 function 注册设置接口() {
@@ -99,6 +100,26 @@ function 注册设置接口() {
     if (!/^https?:\/\//.test(String(url || ''))) throw new Error('只允许打开网页链接');
     await shell.openExternal(url);
     return true;
+  });
+
+  /* ---- 多语言 ---- */
+
+  /** 列出所有可用语言（内置 + 自定义） */
+  注册('语言:列表', async () => 语言.列出语言());
+
+  /** 取某个语言的对照表；zh-CN 不需要语言包，返回 null */
+  注册('语言:读取', async ({ 代码 }) => {
+    if (!代码 || 代码 === 'zh-CN') return null;
+    const 包 = await 语言.取语言(String(代码));
+    if (!包) throw new Error('找不到这个语言包：' + 代码);
+    return 包;
+  });
+
+  /** 打开自定义语言包目录，并确保有一份模板可抄 */
+  注册('语言:打开目录', async () => {
+    const 目录 = await 语言.准备语言目录();
+    await shell.openPath(目录);
+    return { 目录 };
   });
 }
 
