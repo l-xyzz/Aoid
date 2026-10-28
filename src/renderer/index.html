@@ -146,7 +146,14 @@
 
         <!-- ============ 中间：手机画面 ============ -->
         <section class="画面区">
-          <div class="舞台" id="舞台">
+          <!-- data-空闲提示：未连接时舞台中央显示的引导文案，由 CSS ::after 读取 -->
+        <div
+          class="舞台"
+          id="舞台"
+          data-空闲提示="把手机连到电脑上
+在手机上开启「开发者选项 → USB 调试」
+插线后点「允许」，画面会出现在这里"
+        >
             <div class="手机壳" id="手机壳">
               <canvas id="画布" class="画面" width="590" height="1280"></canvas>
               <div class="触控层" id="触控层"></div>

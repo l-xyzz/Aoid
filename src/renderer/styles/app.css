@@ -2144,3 +2144,42 @@ select {
   word-break: break-all;
   opacity: 0.75;
 }
+/* ---------- 未连接时的舞台 ---------- */
+/*
+  未连接就完全收起手机壳。
+  以前留一个 300x640 的半透明空壳，中间一大片黑，像界面坏了。
+  现在改成在舞台中央放一张引导卡片（纯 CSS 绘制，不需要额外 DOM）。
+*/
+.手机壳.未连接 {
+  display: none;
+}
+
+.舞台.空闲::before {
+  content: '';
+  position: absolute;
+  inset: 24px;
+  border-radius: 22px;
+  border: 1px dashed var(--线);
+  background: radial-gradient(60% 40% at 50% 30%, var(--强调-淡), transparent 70%);
+  pointer-events: none;
+}
+
+/* 空状态文案：居中、给出下一步该做什么 */
+.舞台.空闲::after {
+  content: attr(data-空闲提示);
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  max-width: 340px;
+  padding: 20px 26px;
+  border-radius: 14px;
+  background: var(--底-2);
+  box-shadow: var(--阴影);
+  text-align: center;
+  font-size: 13px;
+  line-height: 1.9;
+  color: var(--字-次);
+  white-space: pre-line;
+  pointer-events: none;
+}
