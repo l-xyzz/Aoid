@@ -79,7 +79,15 @@ function 注册设备接口() {
       if (!结果.ok) throw new Error('没有找到 adb，请先准备运行环境');
       await 状态.adb.启动服务().catch(() => {});
     }
-    return 状态.adb.列出设备();
+    const 列表 = await 状态.adb.列出设备();
+    /*
+     * 补一次市场名。
+     * devices -l 给的 model 是内部代号（例如 M332BF），用户根本认不出是哪台机器；
+     * 真正的名字在 ro.product.marketname 里（REDMI K90 Ultra）。
+     * 结果在 Adb 内部按序列号缓存，同一台设备只会多查一次。
+     */
+    await 状态.adb.补全型号(列表);
+    return 列表;
   });
 
   /* 与「设备:列表」等价，兼容 preload 里声明过的「设备:刷新」 */
@@ -90,7 +98,15 @@ function 注册设备接口() {
       if (!结果.ok) throw new Error('没有找到 adb，请先准备运行环境');
       await 状态.adb.启动服务().catch(() => {});
     }
-    return 状态.adb.列出设备();
+    const 列表 = await 状态.adb.列出设备();
+    /*
+     * 补一次市场名。
+     * devices -l 给的 model 是内部代号（例如 M332BF），用户根本认不出是哪台机器；
+     * 真正的名字在 ro.product.marketname 里（REDMI K90 Ultra）。
+     * 结果在 Adb 内部按序列号缓存，同一台设备只会多查一次。
+     */
+    await 状态.adb.补全型号(列表);
+    return 列表;
   });
 
   /* 界面在连接前上报投屏区域的实际高度，主进程据此决定编码分辨率 */

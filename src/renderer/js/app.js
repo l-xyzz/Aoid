@@ -211,35 +211,27 @@ function 应用主题(选择) {
 /* 设备列表                                                            */
 /* ------------------------------------------------------------------ */
 
-const 手机图标 = `
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true">
-    <rect x="6.5" y="2.5" width="11" height="19" rx="2.6" />
-    <path d="M10.5 5.3h3" />
-  </svg>`;
-
-const 无线图标 = `
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true">
-    <path d="M3 9a13 13 0 0 1 18 0M6.5 12.5a8 8 0 0 1 11 0M10 16a3 3 0 0 1 4 0" stroke-linecap="round" />
-    <circle cx="12" cy="19.5" r="1.2" fill="currentColor" stroke="none" />
-  </svg>`;
-
 /**
- * 渲染设备列表：在线设备与「连接过的设备」合成一张表。
+ * 渲染设备列表。
  *
- * 合并规则：
- *   - 在线设备排在最前，显示「使用中 / 可用」；
- *   - 历史设备补在后面，已在线的不重复显示；离线显示连接方式与上次时间，
- *     并提供「重连」和「删除」；
- *   - 两张表合并后，用户在一个地方就能完成「看看有什么设备 / 连哪台 / 忘掉哪台」。
+ * 一条设备卡片要让人一眼看清三件事：
+ *   1. 连没连上（状态点：绿=已就绪 / 黄=待授权 / 灰=离线）
+ *   2. 是什么设备（型号 + 序列号）
+ *   3. 怎么连的（USB / 无线 / USB + 无线）
+ *
+ * 在线设备和「连接过的设备」共用同一种卡片样式，靠状态点区分，
+ * 不再分成两块完全不同的 UI——用户扫一眼就明白，不需要学习两套规则。
  */
 function 渲染设备列表() {
   元素.设备列表.replaceChildren();
 
-  // 在线设备
   const 在线 = 状态.设备 || [];
-  // 历史设备：去掉已在线的那台，避免同一台出现两行
   const 在线序列 = new Set(在线.map((d) => d.serial));
-  const 历史 = (状态.历史设备 || []).filter((项) => !在线序列.has(项.序列号));
+  // 历史里去掉已经在线的（按唯一标识比较，避免 USB 与无线算成两台）
+  const 在线标识 = new Set(在线.map((d) => d.唯一标识 || d.serial));
+  const 历史 = (状态.历史设备 || []).filter(
+    (项) => !在线序列.has(项.序列号) && !在线标识.has(项.序列号),
+  );
 
   if (在线.length === 0 && 历史.length === 0) {
     元素.空态引导.hidden = false;
@@ -248,84 +240,156 @@ function 渲染设备列表() {
   元素.空态引导.hidden = true;
 
   for (const 设备 of 在线) {
-    const 项 = document.createElement('button');
-    项.className = '设备项';
-    项.type = 'button';
-    if (设备.serial === 状态.当前设备) 项.classList.add('选中');
-
-    const 图标 = document.createElement('span');
-    图标.className = '设备图标';
-    图标.innerHTML = 设备.serial.includes(':') ? 无线图标 : 手机图标;
-
-    const 文字 = document.createElement('span');
-    文字.className = '设备文字';
-    const 型号 = document.createElement('div');
-    型号.className = '设备型号';
-    型号.textContent = 设备.model || 设备.device || '安卓设备';
-    const 序列 = document.createElement('div');
-    序列.className = '设备序列号';
-    序列.textContent = 设备.serial;
-    文字.append(型号, 序列);
-
-    const 标记 = document.createElement('span');
-    if (设备.state === 'device') {
-      标记.className = '设备状态标记';
-      标记.textContent = 设备.serial === 状态.当前设备 ? '使用中' : '可用';
-    } else {
-      标记.className = '设备状态标记 未授权';
-      标记.textContent = 设备.state === 'unauthorized' ? '待授权' : '离线';
-    }
-
-    项.append(图标, 文字, 标记);
-    项.addEventListener('click', () => 选择设备(设备));
-    元素.设备列表.appendChild(项);
+    元素.设备列表.appendChild(构建在线设备卡片(设备));
   }
-
-  for (const 项数据 of 历史) {
-    const 项 = document.createElement('div');
-    项.className = '设备项 历史';
-
-    const 图标 = document.createElement('span');
-    图标.className = '设备图标';
-    图标.innerHTML = 项数据.方式 === '无线' ? 无线图标 : 手机图标;
-
-    const 文字 = document.createElement('span');
-    文字.className = '设备文字';
-    const 型号 = document.createElement('div');
-    型号.className = '设备型号';
-    型号.textContent = 项数据.名称 || 项数据.序列号;
-    const 备注 = document.createElement('div');
-    备注.className = '设备序列号';
-    备注.textContent = 项数据.方式 + ' · ' + 相对时间(项数据.最后连接);
-    文字.append(型号, 备注);
-
-    // 离线设备点「重连」，右侧小按钮删除
-    const 操作 = document.createElement('span');
-    操作.className = '设备操作';
-
-    const 重连 = document.createElement('button');
-    重连.className = '小按钮';
-    重连.type = 'button';
-    重连.textContent = '重连';
-    重连.addEventListener('click', (事件) => {
-      事件.stopPropagation();
-      重连设备(项数据.序列号);
-    });
-
-    const 删除 = document.createElement('button');
-    删除.className = '小按钮 危险';
-    删除.type = 'button';
-    删除.textContent = '删除';
-    删除.addEventListener('click', (事件) => {
-      事件.stopPropagation();
-      删除历史设备(项数据.序列号);
-    });
-
-    操作.append(重连, 删除);
-    项.append(图标, 文字, 操作);
-    元素.设备列表.appendChild(项);
+  for (const 项 of 历史) {
+    元素.设备列表.appendChild(构建历史设备卡片(项));
   }
 }
+
+/** 状态 → 展示文案与颜色 */
+function 状态展示(state) {
+  if (state === 'device') return { 文案: '已连接', 类名: '在线' };
+  if (state === 'unauthorized') return { 文案: '待授权', 类名: '待授权' };
+  if (state === 'recovery') return { 文案: '恢复模式', 类名: '待授权' };
+  return { 文案: '离线', 类名: '离线' };
+}
+
+/** 连接方式 → 小标签的图标与文案 */
+function 连接标签(连接方式文本) {
+  const 无线 = 连接方式文本 && 连接方式文本.includes('无线');
+  const USB = 连接方式文本 && 连接方式文本.includes('USB');
+  if (USB && 无线) return { 文本: 'USB + 无线', 图标: 'both' };
+  if (无线) return { 文本: '无线', 图标: 'wifi' };
+  if (USB) return { 文本: 'USB', 图标: 'usb' };
+  return { 文本: '未知', 图标: 'usb' };
+}
+
+/** 小标签的 SVG（16x16，跟随 currentColor） */
+const 标签图标 = {
+  usb: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3"><path d="M8 2v9" stroke-linecap="round"/><path d="M8 2l2 2M8 2L6 4" stroke-linecap="round"/><rect x="6.4" y="11" width="3.2" height="3" rx="1"/></svg>',
+  wifi: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3"><path d="M2.2 6.2a9 9 0 0 1 11.6 0" stroke-linecap="round"/><path d="M4.6 8.8a5.6 5.6 0 0 1 6.8 0" stroke-linecap="round"/><circle cx="8" cy="12" r="1.1" fill="currentColor" stroke="none"/></svg>',
+  both: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3"><path d="M4.5 11.5a4 4 0 0 1 0-5.6" stroke-linecap="round"/><path d="M6.6 9.4a1.4 1.4 0 0 1 0-2" stroke-linecap="round"/><path d="M11.5 4.5a4 4 0 0 1 0 5.6" stroke-linecap="round"/><circle cx="9.6" cy="8.4" r="1" fill="currentColor" stroke="none"/></svg>',
+};
+
+/**
+ * 组装一条设备卡片。
+ * @param {object} 选项
+ */
+function 构建设备卡片({ 型号, 副标题, 状态文案, 状态类, 连接, 选中, 主按钮文字, 主按钮动作, 删除动作 }) {
+  const 卡 = document.createElement('div');
+  卡.className = '设备卡' + (选中 ? ' 选中' : '');
+
+  // 左侧：状态点 + 设备图标
+  const 左侧 = document.createElement('span');
+  左侧.className = '设备卡-左侧';
+  const 点 = document.createElement('span');
+  点.className = '设备状态点 ' + 状态类;
+  点.title = 状态文案;
+  左侧.appendChild(点);
+
+  // 中间：型号 + 副标题 + 连接标签
+  const 中间 = document.createElement('span');
+  中间.className = '设备卡-中间';
+  const 名 = document.createElement('span');
+  名.className = '设备卡-名';
+  名.textContent = 型号;
+  const 副 = document.createElement('span');
+  副.className = '设备卡-副';
+  副.textContent = 副标题;
+  中间.append(名, 副);
+
+  const 标签 = document.createElement('span');
+  标签.className = '设备卡-标签';
+  const 连接信息 = 连接标签(连接);
+  标签.innerHTML = (标签图标[连接信息.图标] || '') + '<span>' + 连接信息.文本 + '</span>';
+  中间.appendChild(标签);
+
+  // 右侧：状态文案 / 操作按钮
+  const 右侧 = document.createElement('span');
+  右侧.className = '设备卡-右侧';
+
+  if (主按钮文字) {
+    const 用 = document.createElement('button');
+    用.className = '设备卡-按钮 主';
+    用.type = 'button';
+    用.textContent = 主按钮文字;
+    用.addEventListener('click', (事件) => {
+      事件.stopPropagation();
+      主按钮动作();
+    });
+    右侧.appendChild(用);
+  } else {
+    const 文 = document.createElement('span');
+    文.className = '设备卡-状态 ' + 状态类;
+    文.textContent = 状态文案;
+    右侧.appendChild(文);
+  }
+
+  if (删除动作) {
+    const 删 = document.createElement('button');
+    删.className = '设备卡-按钮';
+    删.type = 'button';
+    删.title = '删除';
+    删.textContent = '×';
+    删.addEventListener('click', (事件) => {
+      事件.stopPropagation();
+      删除动作();
+    });
+    右侧.appendChild(删);
+  }
+
+  卡.append(左侧, 中间, 右侧);
+  return 卡;
+}
+
+/** 在线设备 */
+function 构建在线设备卡片(设备) {
+  const 展示 = 状态展示(设备.state);
+  const 可用 = 设备.state === 'device';
+  const 使用中 = 设备.serial === 状态.当前设备;
+
+  const 卡 = 构建设备卡片({
+    // 优先用市场名（REDMI K90 Ultra），其次型号代号（M332BF），最后兜底
+    型号: 设备.市场名 || 设备.model || 设备.device || '安卓设备',
+    副标题: 设备.唯一标识 && 设备.唯一标识 !== 设备.serial ? 设备.序列号 : 设备.serial,
+    状态文案: 使用中 ? '使用中' : 展示.文案,
+    状态类: 展示.类名,
+    连接: 设备.连接方式文本 || 设备.连接,
+    选中: 使用中,
+    // 未连接的在线设备给个「连接」按钮；待授权的提示去手机点允许
+    主按钮文字: 可用 && !使用中 ? '连接' : '',
+    主按钮动作: () => 选择设备(设备),
+    删除动作: null,
+  });
+
+  // 待授权时整张卡不可点，改成提示
+  if (!可用) {
+    卡.classList.add('不可用');
+    卡.title = '请先在手机上点「允许 USB 调试」';
+  } else {
+    卡.addEventListener('click', () => 选择设备(设备));
+    卡.style.cursor = 'pointer';
+  }
+
+  return 卡;
+}
+
+/** 历史设备（当前不在线） */
+function 构建历史设备卡片(项) {
+  return 构建设备卡片({
+    型号: 项.名称 || 项.序列号,
+    副标题: 项.序列号 + ' · ' + 相对时间(项.最后连接),
+    状态文案: '离线',
+    状态类: '离线',
+    连接: 项.方式,
+    选中: false,
+    主按钮文字: '重连',
+    主按钮动作: () => 重连设备(项.序列号),
+    删除动作: () => 删除历史设备(项.序列号),
+  });
+}
+
 
 async function 选择设备(设备) {
   if (设备.state === 'unauthorized') return 提示('请先在手机上点「允许 USB 调试」', '错误');

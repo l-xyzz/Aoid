@@ -2183,3 +2183,163 @@ select {
   white-space: pre-line;
   pointer-events: none;
 }
+/* ---------- 设备卡片（重构版） ---------- */
+/*
+  一张卡片同时表达三件事：连没连上、是什么设备、怎么连的。
+  左侧状态点 + 中间型号与标签 + 右侧操作，层次靠大小和颜色区分。
+*/
+.设备卡 {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 10px;
+  border-radius: 10px;
+  border: 1px solid transparent;
+  background: var(--底-2);
+  transition: background 0.12s, border-color 0.12s;
+}
+
+.设备卡:hover {
+  background: var(--底-3);
+}
+
+.设备卡.选中 {
+  border-color: var(--强调);
+  background: var(--强调-淡);
+}
+
+/* 待授权 / 离线：整张卡降低存在感，避免看起来可点 */
+.设备卡.不可用 {
+  opacity: 0.72;
+}
+
+.设备卡-左侧 {
+  display: flex;
+  align-items: center;
+  flex: none;
+}
+
+/* 状态点：一眼看出连没连上 */
+.设备状态点 {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex: none;
+}
+
+.设备状态点.在线 {
+  background: #3ecf8e;
+  box-shadow: 0 0 0 3px rgba(62, 207, 142, 0.16);
+}
+
+.设备状态点.待授权 {
+  background: var(--强调);
+  box-shadow: 0 0 0 3px var(--强调-淡);
+}
+
+.设备状态点.离线 {
+  background: var(--字-弱);
+  opacity: 0.5;
+}
+
+.设备卡-中间 {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+  flex: 1;
+}
+
+.设备卡-名 {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--字-主);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.设备卡-副 {
+  font-size: 10.5px;
+  color: var(--字-弱);
+  font-variant-numeric: tabular-nums;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* 连接方式小标签：图标 + 文字 */
+.设备卡-标签 {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  align-self: flex-start;
+  margin-top: 1px;
+  padding: 1px 6px 1px 4px;
+  border-radius: 5px;
+  background: var(--底-3);
+  font-size: 10px;
+  color: var(--字-次);
+  line-height: 1.6;
+}
+
+.设备卡-标签 svg {
+  width: 11px;
+  height: 11px;
+  flex: none;
+}
+
+.设备卡-右侧 {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex: none;
+}
+
+.设备卡-状态 {
+  font-size: 10.5px;
+  padding: 2px 7px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+.设备卡-状态.在线 {
+  color: #3ecf8e;
+  background: rgba(62, 207, 142, 0.12);
+}
+
+.设备卡-状态.待授权 {
+  color: var(--强调);
+  background: var(--强调-淡);
+}
+
+.设备卡-状态.离线 {
+  color: var(--字-弱);
+  background: var(--底-3);
+}
+
+.设备卡-按钮 {
+  border: none;
+  background: var(--底-3);
+  color: var(--字-次);
+  font-size: 10.5px;
+  padding: 3px 8px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.12s, color 0.12s;
+}
+
+.设备卡-按钮:hover {
+  background: var(--线-强);
+  color: var(--字-主);
+}
+
+.设备卡-按钮.主 {
+  background: var(--强调-淡);
+  color: var(--强调);
+}
+
+.设备卡-按钮.主:hover {
+  background: var(--强调);
+  color: #fff;
+}

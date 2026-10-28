@@ -191,27 +191,80 @@ class Adb {
   }
 
   /** 列出设备 */
+  /**
+   * 补全设备的好看名字。
+   *
+   * `adb devices -l` 给出的 model 是**内部代号**（例如 M332BF），
+   * 用户根本认不出这是哪台机器。真正的市场名要读
+   * `ro.product.marketname`（REDMI K90 Ultra）。
+   *
+   * 这个属性只能通过 shell 拿，不能对每台设备都实时跑
+   * （每台多一次 adb 往返，设备一多列表就慢）。所以：
+   *   - 只对状态是 device 的（能执行 shell 的）去查
+   *   - 结果按序列号缓存，同一台设备只查一次
+   */
+  async 补全型号(设备列表) {
+    if (!this.型号缓存) this.型号缓存 = new Map();
+
+    const 可用 = 设备列表.filter((d) => d.state === 'device');
+    for (const 设备 of 可用) {
+      // 已缓存就复用
+      if (this.型号缓存.has(设备.serial)) {
+        const 缓存 = this.型号缓存.get(设备.serial);
+        设备.市场名 = 缓存.市场名;
+        设备.品牌 = 缓存.品牌;
+        continue;
+      }
+
+      try {
+        const { stdout } = await this.设备shell(
+          设备.serial,
+          'getprop ro.product.marketname; getprop ro.product.brand',
+          { timeout: 6000 },
+        );
+        const 行 = stdout.split(/\r?\n/).map((s) => s.trim());
+        const 市场名 = 行[0] || '';
+        const 品牌 = 行[1] || '';
+        this.型号缓存.set(设备.serial, { 市场名, 品牌 });
+        设备.市场名 = 市场名;
+        设备.品牌 = 品牌;
+      } catch {
+        // 查不到就用代号兜底，不能因为这一台失败影响整张列表
+        设备.市场名 = '';
+        设备.品牌 = '';
+      }
+    }
+
+    return 设备列表;
+  }
+
   async 列出设备() {
     const { stdout } = await this.#执行(this.adbPath, ['devices', '-l'], { timeout: 15000 });
-    const 列表 = [];
+    const 原始列表 = [];
 
     for (const 行 of stdout.split(/\r?\n/).slice(1)) {
       if (!行.trim()) continue;
       const [序列号, 状态, ...其余] = 行.trim().split(/\s+/);
+      if (!序列号 || 序列号 === '*') continue;
+
       const 属性 = {};
       for (const 片段 of 其余) {
-        const 位置 = 片段.indexOf(':');
-        if (位置 > 0) 属性[片段.slice(0, 位置)] = 片段.slice(位置 + 1);
+         const 位置 = 片段.indexOf(':');
+         if (位置 > 0) 属性[片段.slice(0, 位置)] = 片段.slice(位置 + 1);
       }
-      列表.push({
+
+      原始列表.push({
         serial: 序列号,
         state: 状态,
         model: (属性.model || '').replace(/_/g, ' '),
         product: 属性.product || '',
         device: 属性.device || '',
+        连接: 判断连接方式(序列号),
+        唯一标识: 提取设备标识(序列号),
       });
     }
-    return 列表;
+
+    return 合并重复设备(原始列表);
   }
 
   /** 读取设备详情 */
@@ -376,4 +429,80 @@ class Adb {
   }
 }
 
-module.exports = { Adb, AdbError };
+/**
+ * 判断这条 adb 连接是 USB 还是无线。
+ *
+ * adb 不会直接告诉你，只能从序列号格式推断：
+ *   USB：一串十六进制（如 80204e16），部分厂商是型号+序号
+ *   无线：IP:端口（被动连上）或 adb-xxx._adb-tls-connect._tcp（配对连上）
+ *
+ * 注意 mDNS 那条长这样：adb-80204e16-j0nUEo._adb-tls-connect._tcp
+ * 里面夹着 USB 序列号，所以不能用"包含冒号"来判断。
+ */
+function 判断连接方式(序列号) {
+  if (!序列号) return '未知';
+  if (/_adb-tls-(connect|pairing)\._tcp/.test(序列号)) return '无线';
+  if (/^\d{1,3}(\.\d{1,3}){3}:\d+$/.test(序列号)) return '无线';
+  // emulator-5554 这类也算本地，但归到 USB 更让人看得懂
+  return 'USB';
+}
+
+/**
+ * 提取「同一台物理设备」的标识，用于合并 USB / 无线的两条连接。
+ *
+ * - 无线 mDNS 名 adb-80204e16-j0nUEo._adb-tls-connect._tcp → 80204e16
+ * - IP:端口 无法反推序列号，只能原样作为标识
+ * - USB 序列号本身就是标识
+ */
+function 提取设备标识(序列号) {
+  if (!序列号) return '';
+  const m = /^adb-(.+?)-[^-]+_adb-tls-\w+\._tcp$/.exec(序列号);
+  if (m) return m[1];
+  return 序列号;
+}
+
+/**
+ * 合并同一台设备的重复连接。
+ *
+ * 同一台手机同时插着 USB 又开着无线调试时，adb 会列出两条。
+ * 界面上应该只出现一条，并把连接方式标成「USB + 无线」，
+ * 实际使用时优先走 USB（更稳、延迟更低）。
+ */
+function 合并重复设备(列表) {
+  const 表 = new Map();
+
+  for (const 设备 of 列表) {
+    const 键 = 设备.唯一标识 || 设备.serial;
+    const 已有 = 表.get(键);
+
+    if (!已有) {
+      表.set(键, {
+        ...设备,
+        连接方式: [设备.连接],
+        // 实际用来连接的序列号：优先 USB
+        serial: 设备.serial,
+      });
+      continue;
+    }
+
+    if (!已有.连接方式.includes(设备.连接)) 已有.连接方式.push(设备.连接);
+
+    // 优先保留 USB 那条作为实际序列号，USB 更稳
+    if (设备.连接 === 'USB' && 已有.连接 !== 'USB') {
+      已有.serial = 设备.serial;
+      已有.连接 = 'USB';
+      已有.state = 设备.state;
+    }
+    // 状态取「更好的那个」：device > unauthorized > offline
+    const 权重 = { device: 3, unauthorized: 2, recovery: 1, offline: 0 };
+    if ((权重[设备.state] || 0) > (权重[已有.state] || 0)) 已有.state = 设备.state;
+  }
+
+  return [...表.values()].map((设备) => ({
+    ...设备,
+    // 给界面直接用的展示文案
+    连接方式文本: 设备.连接方式.sort((a, b) => (a === 'USB' ? -1 : 1)).join(' + '),
+  }));
+}
+
+module.exports = { Adb, AdbError, 判断连接方式, 提取设备标识 };
