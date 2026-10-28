@@ -27,13 +27,24 @@ Aoid is a lightweight desktop app that mirrors your phone's screen and lets you 
 - **Toolbox** — app manager, process manager, two-pane file manager, and a built-in ADB console with autocomplete
 - **Multi-language** — English and Simplified Chinese built in; load your own language pack
 
-## Why another scrcpy GUI?
+## Why Aoid instead of plain scrcpy?
 
-Aoid focuses on three things:
+scrcpy is an excellent tool, but it is command-line only. Aoid wraps the same server in a **complete desktop application**:
 
-1. **Small and dependency-free.** Zero runtime npm dependencies. Everything is plain JSON and vanilla JavaScript on top of Electron.
-2. **Honest engineering.** When a shortcut doesn't work, the fix goes in the code with a comment explaining why — not a workaround that hides the symptom.
-3. **Hackable.** Language packs are plain JSON you can generate with any LLM. The update checker speaks the public GitHub API.
+| | scrcpy | **Aoid** |
+| --- | --- | --- |
+| Interface | Command-line flags | **GUI — open it and go** |
+| Wireless | Type `adb pair` / `adb connect` yourself | **Built-in pairing wizard with IP and code fields** |
+| CJK input | Configure an IME yourself | **Type in the box; Chinese and emoji reach the phone** |
+| File transfer | `adb push` / `adb pull` | **Two-pane file manager, click to transfer** |
+| Debugging | Separate terminal | **Built-in ADB console with completion and highlighting** |
+| Language | English | **English + Chinese, plus loadable language packs** |
+| Shortcuts | Fixed | **Customizable, mouse buttons included** |
+
+In one line: **Aoid puts scrcpy's power behind an interface you do not need to read docs for.**
+
+It also stays small and hackable: **zero runtime npm dependencies**, plain JSON language packs you can generate with any LLM, and an update checker that speaks the public GitHub API.
+
 
 ## Install
 

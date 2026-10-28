@@ -1,43 +1,48 @@
 # Aoid
 
-> 用数据线把手机接到电脑上，在一个窗口里看画面、点屏幕、打字。
+**Lightweight Android screen mirroring & remote control for Windows.**
+**Windows 安卓投屏控制工具 —— 有线/无线直连，手机端无需装 App，不需要 root。**
 
-轻量、免安装、界面干净。不需要在手机里装任何应用，也不需要 root。
+[![Version](https://img.shields.io/badge/version-1.0.0-orange)](https://github.com/l-xyzz/Aoid/releases)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Platform](https://img.shields.io/badge/platform-Windows%2010%2F11%20x64-blue)](https://github.com/l-xyzz/Aoid/releases)
+[![Downloads](https://img.shields.io/github/downloads/l-xyzz/Aoid/total?color=green)](https://github.com/l-xyzz/Aoid/releases)
 
 ![界面预览](docs/screenshot.png)
 
 ---
 
-## 版本状态
+## 为什么是 Aoid，而不是直接用 scrcpy
 
-**Aoid 已发布 1.0.0，核心功能可用，但仍处于快速迭代阶段，部分设备上的兼容性还在完善。**
+scrcpy 是极优秀的工具，但它只有命令行。Aoid 在它的服务端之上做了一层**完整的桌面应用**：
 
-已知问题包括但不限于：
+| | scrcpy | **Aoid** |
+| --- | --- | --- |
+| 交互方式 | 命令行参数 | **图形界面，点开就能用** |
+| 无线连接 | 手动敲 `adb pair` / `adb connect` | **内置配对向导，按提示填 IP 和配对码** |
+| 中文输入 | 需自行配置输入法 | **输入框直接打字，中文/emoji 都能进手机** |
+| 文件传输 | 命令行 `adb push/pull` | **双栏文件管理器，点一下就过去** |
+| 调试 | 另开终端 | **内置 ADB 控制台，带命令补全与语法高亮** |
+| 语言 | 英文 | **中英双语，可加载任意语言包** |
+| 快捷键 | 固定 | **可自定义，鼠标键也能绑** |
 
-- 画面偶发卡顿、撕裂，横竖屏热切换时可能需要几秒恢复
-- 无线调试的连接稳定性不如 USB
-- 麦克风、虚拟摄像头等「更多功能」尚未充分测试
-- 暂无代码签名，Windows 首次运行会弹 SmartScreen 警告
-
-**欢迎提意见。** 遇到问题请先看 [已知问题](#已知问题) 与 [Issues](https://github.com/l-xyzz/Aoid/issues)，
-新问题请按 Issue 模板描述清楚**手机型号、Android 版本、复现步骤**，这对定位非常关键。
-后续会持续接受反馈、修复问题、优化体验。
+一句话：**Aoid 把 scrcpy 的能力，装进了一个不用查文档就能用的界面里。**
 
 ---
 
-## 它是什么
+## 核心亮点
 
-Aoid 是一个基于 [scrcpy](https://github.com/Genymobile/scrcpy) 服务端的 Windows 桌面工具：
+- **实时画面** —— USB 传输 H.264，硬件解码，实测 30~60 fps
+- **跟手触控** —— 点击、拖动、长按、滚轮即时转发，鼠标拖出画面也不中断
+- **中文输入** —— 支持中文、emoji，走剪贴板粘贴，兼容性最好
+- **无线调试** —— 配对码或 IP 直连，配对后可以拔掉数据线
+- **录屏与截图** —— 一键录 MP4，或保存手机原始分辨率无损 PNG
+- **文件管理** —— 左手机右电脑双栏，记住上次位置，可切换任意磁盘
+- **ADB 控制台** —— 命令历史、Tab 补全、语法高亮、输出可选中复制
+- **手机当摄像头/麦克风** —— 开会、直播都能用
+- **自动更新** —— 检查新版本，显示更新说明，确认后自动升级
 
-- **实时画面**：USB 传输 H.264，用浏览器原生 WebCodecs 直接硬解，实测 30~60fps
-- **跟手触控**：鼠标按下、拖动、长按、滚轮都会即时转发到手机
-- **中文输入**：输入框里的内容直接注入手机，支持中文（走剪贴板粘贴，兼容性最好）
-- **常用按键**：返回、主页、任务、旋转、通知栏、控制中心，可自定义快捷键
-- **无线调试**：配对码或直接连 IP，配对后可脱离数据线
-- **音量与亮度**：实时双向同步，拖滑杆立刻生效
-- **截图**：保存手机原始分辨率的无损 PNG，或复制到剪贴板
-- **更多功能**：手机当电脑摄像头 / 麦克风，投屏到 OBS 虚拟摄像头
-- **剪贴板同步**：默认关闭，开启后电脑与手机双向实时同步
+---
 
 ## 下载
 
@@ -50,18 +55,19 @@ Aoid 是一个基于 [scrcpy](https://github.com/Genymobile/scrcpy) 服务端的
 | `Aoid-<版本>-win-x64.zip` | 免安装目录 | 解压即用，适合内网分发 |
 
 > **第一次运行会被 Windows 拦截**，提示「Windows 已保护你的电脑」。
-> 这是没有购买代码签名证书的必然结果，点「**更多信息**」→「**仍要运行**」即可。
+> 这是因为没有购买代码签名证书，点「**更多信息**」→「**仍要运行**」即可。
 
 **系统要求**：Windows 10 / 11（64 位）。手机需 Android 5.0 以上。
 
+---
+
 ## 快速开始
 
-1. 手机打开「设置 → 关于手机」，连点「版本号」7 次开启开发者选项
-2. 进入「开发者选项」，打开「**USB 调试**」
-3. 用数据线连接电脑，手机上弹出授权窗口时点「**允许**」
-4. 启动 Aoid，左侧会立刻出现这台设备，点它即可
+三步就能用上：
 
-不同品牌的开发者选项位置略有差异，应用内的「添加设备 → 调试教程」有说明。
+1. **手机开启 USB 调试** —— 设置 → 关于手机 → 连点「版本号」7 次 → 开发者选项 → 打开「USB 调试」
+2. **插上数据线** —— 手机上弹出授权窗口时点「允许」
+3. **打开 Aoid** —— 左侧会出现这台设备，点它就能看到画面
 
 <details>
 <summary><b>无线调试（Android 11 以上，免数据线）</b></summary>
@@ -74,49 +80,14 @@ Aoid 是一个基于 [scrcpy](https://github.com/Genymobile/scrcpy) 服务端的
 
 </details>
 
-## 多语言
+---
 
-Aoid 支持切换界面语言。内置**简体中文**与**English**，并且在设置 → 通用 → 语言里可以加载第三方语言包。
+## 已知限制
 
-### 自己做一个语言包
+Aoid 已经发布 1.0.0，核心功能可用，但仍在快速迭代，部分设备上的兼容性还在完善。
 
-语言包就是一张「中文原文 → 译文」的对照表，纯文本 JSON，不需要改代码。
-
-1. 打开 **设置 → 通用 → 自定义语言 → 打开语言文件夹**
-   （会打开 `%APPDATA%\Aoid\languages`，并生成一份 `_模板.json`）
-2. 把 `_模板.json` 交给 AI，让它「把每个键的中文翻译成目标语言，只输出 JSON」
-3. 把结果保存为 `<语言代码>.json`，例如 `ja-JP.json`、`ko-KR.json`
-4. 回到 Aoid，点「重新扫描语言」，在下拉框里选中它
-
-格式长这样：
-
-```json
-{
-  "名称": "日本語",
-  "代码": "ja-JP",
-  "作者": "your name",
-  "词典": {
-    "设备": "デバイス",
-    "刷新": "更新",
-    "用 USB 线连接手机": "USB ケーブルでスマートフォンを接続"
-  }
-}
-```
-
-也可以省略外壳，直接给扁平的对照表：
-
-```json
-{ "设备": "デバイス", "刷新": "更新" }
-```
-
-**说明**
-
-- 文件名（不含扩展名）要与 `代码` 一致，否则请确保两者相同
-- 自定义语言包与内置同名时会**覆盖**内置那份，方便修正翻译
-- 语言包里没翻译的条目会自动回落到中文，不会出现空白
-- 单个语言包上限 2 MB
-
-## 已知问题
+<details>
+<summary><b>已知问题（点击展开）</b></summary>
 
 | 问题 | 现状 |
 | --- | --- |
@@ -127,18 +98,43 @@ Aoid 支持切换界面语言。内置**简体中文**与**English**，并且在
 | 代码签名 | 无，首次运行有 SmartScreen 提示 |
 | 平台 | 目前只支持 Windows x64 |
 
+</details>
+
+遇到问题请按 [Issue 模板](https://github.com/l-xyzz/Aoid/issues/new/choose) 反馈，
+**请务必写明手机型号、Android 版本与复现步骤**，这对定位非常关键。
+
+---
+
+## 多语言
+
+内置**简体中文**与**English**。其他语言可以自己加：
+
+设置 → 通用 → 自定义语言 → 「打开语言文件夹」，会生成一份 `_模板.json`。
+把它交给 AI 翻译成任意语言，存成 `<语言代码>.json` 放回该文件夹，
+点「重新扫描语言」就能在下拉框里选到。
+
+语言包格式是「中文原文 → 译文」的纯文本对照表，不需要改任何代码。
+
+---
+
 ## 从源码构建
 
 ```bash
+git clone https://github.com/l-xyzz/Aoid.git
+cd Aoid
 npm install
 npm run fetch:runtime   # 下载 scrcpy 运行组件（scrcpy.exe / SDL2 / ffmpeg，约 18MB）
 npm run bundle:tools    # 下载 adb（约 8MB）
 npm start               # 启动应用
-npm run dev             # 启动并打开开发者工具
 ```
 
+需要 Node.js 20 以上。
+
+> `scrcpy-runtime/` 和 `platform-tools/` 不进仓库（体积大且可重新下载），
+> 所以 clone 之后**必须先跑上面两条下载命令**，否则画面和触控都无法工作。
+
 <details>
-<summary><b>国内网络下载慢怎么办</b></summary>
+<summary><b>国内网络下载慢</b></summary>
 
 仓库里的 `.npmrc` 刻意没有写死镜像源，以保证国内外都能正常安装。
 如果你在国内，可以临时设置环境变量（不要改 `.npmrc`）：
@@ -151,22 +147,19 @@ set ELECTRON_BUILDER_BINARIES_MIRROR=https://npmmirror.com/mirrors/electron-buil
 
 </details>
 
-需要 Node.js 20 以上。
-
-> `scrcpy-runtime/` 和 `platform-tools/` 不进仓库（体积大且可重新下载），
-> 所以 clone 之后**必须先跑上面两条下载命令**，否则画面和触控都无法工作。
-
 ### 打包
 
 ```bash
 npm run dist:safe   # 推荐：在本地磁盘构建，产出安装包 + 便携版 + zip
-npm run dist        # 直接调用 electron-builder（不生成 zip）
+npm run dist        # 直接调用 electron-builder
 ```
 
-`dist:safe` 会先把项目复制到本地磁盘再打包——因为 **Electron 无法从网络驱动器（如 Z:）启动**，
+`dist:safe` 会先把项目复制到本地磁盘再打包 —— 因为 **Electron 无法从网络驱动器（如 Z:）启动**，
 产物落在网络盘上会导致双击毫无反应。
 
 详细的打包选项、产物说明、发布流程见 [贡献指南的「打包」一节](CONTRIBUTING.md#打包)。
+
+---
 
 ## 技术路线
 
@@ -190,27 +183,29 @@ src/
   main/           主进程
     core/         共享状态、IPC 注册封装、路径解析
     session/      连接与画面通道生命周期
-    ipc/          按域拆分的 IPC：device / settings / screen / features / wireless
+    ipc/          按域拆分的 IPC：device / settings / screen / features / wireless / tools
     scrcpy.js     scrcpy 服务端通道（视频流解析、控制协议）
     adb.js        adb 封装
-    camera.js     摄像头
-    microphone.js 麦克风（虚拟声卡）
-    virtual-camera.js  OBS 虚拟摄像头
+    updater.js    自动更新
   renderer/       渲染进程
     js/app.js     界面主逻辑
     js/player.js  WebCodecs 解码 + 画布渲染
-    js/markdown.js 文档渲染
+    js/tools.js   更多功能窗口（应用 / 进程 / 文件 / ADB 控制台）
     styles/       样式
 scripts/          构建与自检脚本
 resources/        图标等
 vendor/           scrcpy 服务端 jar
 ```
 
+---
+
 ## 参与
 
 - 有 bug 或建议 → [提 Issue](https://github.com/l-xyzz/Aoid/issues/new/choose)
 - 想贡献代码 → 见 [CONTRIBUTING.md](CONTRIBUTING.md)
 - 安全问题 → 见 [SECURITY.md](SECURITY.md)
+
+如果 Aoid 对你有帮助，点个 Star 是对这个项目最实在的支持。
 
 ## 关于第三方组件
 
@@ -228,7 +223,7 @@ vendor/           scrcpy 服务端 jar
 
 ## 隐私
 
-Aoid 完全在本机运行，不连任何服务器，不收集任何数据。详见 [PRIVACY.md](PRIVACY.md)。
+完全在本机运行，不连任何服务器，不收集任何数据。详见 [PRIVACY.md](PRIVACY.md)。
 
 ## 许可
 

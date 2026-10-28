@@ -375,8 +375,38 @@ function 显示工具窗口(显示) {
   });
 
   状态.工具窗口.setMenuBarVisibility(false);
+
+  /*
+   * 显示窗口要三重保险。
+   *
+   * 只靠 ready-to-show 是不够的：它依赖渲染进程画出首帧，
+   * 打包环境或 GPU 初始化慢的时候可能一直不触发，窗口就永远不显示
+   * （主窗口早期也踩过这个坑）。
+   *   - ready-to-show：正常路径
+   *   - dom-ready：DOM 就绪就先显示
+   *   - 1.5 秒兜底：无论如何把窗口拿出来
+   */
+  let 已显示 = false;
+  const 显示窗口 = () => {
+    if (已显示) return;
+    if (!状态.工具窗口 || 状态.工具窗口.isDestroyed()) return;
+    已显示 = true;
+    状态.工具窗口.show();
+    状态.工具窗口.focus();
+  };
+
+  状态.工具窗口.once('ready-to-show', 显示窗口);
+  状态.工具窗口.webContents.once('dom-ready', 显示窗口);
+  const 兜底 = setTimeout(显示窗口, 1500);
+  状态.工具窗口.once('closed', () => clearTimeout(兜底));
+
+  状态.工具窗口.webContents.on('did-fail-load', (事件, 码, 描述) => {
+    console.error('[工具窗口] 页面加载失败：', 码, 描述);
+    显示窗口();
+  });
+
   状态.工具窗口.loadFile(path.join(根目录, 'src', 'renderer', 'tools.html'));
-  状态.工具窗口.once('ready-to-show', () => 状态.工具窗口.show());
+
   状态.工具窗口.on('closed', () => {
     状态.工具窗口 = null;
   });
