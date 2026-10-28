@@ -29,7 +29,8 @@ const { 虚拟摄像头 } = require('./virtual-camera');
 const { 注册设备接口 } = require('./ipc/device');
 const { 注册设置接口 } = require('./ipc/settings');
 const { 注册画面接口 } = require('./ipc/screen');
-const { 注册更多功能接口, 显示更多窗口 } = require('./ipc/features');
+const { 注册外设接口, 显示更多窗口 } = require('./ipc/features');
+const { 注册键鼠接口 } = require('./ipc/peripherals');
 const { 注册无线接口 } = require('./ipc/wireless');
 const { 初始化回报监听, 启动电脑剪贴板监听 } = require('./session/session');
 
@@ -159,8 +160,8 @@ function 构建菜单() {
       label: '功能',
       submenu: [
         {
-          id: '更多功能',
-          label: '更多功能（摄像头 / 麦克风）',
+          id: '外设',
+          label: '外设（摄像头 / 麦克风）',
           type: 'checkbox',
           checked: false,
           accelerator: 'CmdOrCtrl+Shift+M',
@@ -224,7 +225,8 @@ async function 初始化() {
   注册设备接口();
   注册设置接口();
   注册画面接口();
-  注册更多功能接口();
+  注册外设接口();
+  注册键鼠接口();
   注册无线接口();
   初始化回报监听();
   启动电脑剪贴板监听();

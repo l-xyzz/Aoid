@@ -6,7 +6,7 @@
       http-equiv="Content-Security-Policy"
       content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; media-src 'self' blob:; connect-src 'self' blob: data:; font-src 'self'"
     />
-    <title>Aoid 更多功能</title>
+    <title>Aoid 外设</title>
     <link rel="stylesheet" href="./styles/app.css" />
     <style>
       /* 独立窗口：整页就是一列卡片，不需要三栏布局 */
@@ -175,9 +175,33 @@
   <body>
     <div class="更多页">
       <header class="更多页头">
-        <h1>更多功能</h1>
+        <h1>外设</h1>
         <span class="状态" id="连接状态">未连接设备</span>
       </header>
+
+      <!-- 键鼠直连 -->
+      <section class="卡片">
+        <h2>把电脑的鼠标键盘接到手机上</h2>
+        <p class="卡片说明">
+          打开后，鼠标在主窗口画面上移动、点击、滚动，键盘输入，都会转发给手机，
+          相当于给手机插了一套鼠标键盘。
+          <br />
+          用于浏览网页、打字、玩支持键鼠的游戏。默认关闭，需要时再打开。
+        </p>
+
+        <div class="行">
+          <label class="开关行">
+            <input type="checkbox" id="键鼠开关" />
+            <span>启用键鼠直连</span>
+          </label>
+          <span class="状态" id="键鼠状态">已关闭</span>
+        </div>
+
+        <p class="卡片说明 次要">
+          开启后建议先用左侧的「文字输入」框试一下：中文建议走文本框（会走剪贴板粘贴，
+          兼容性最好），英文和数字可以直接用键盘敲。
+        </p>
+      </section>
 
       <!-- 摄像头 -->
       <section class="卡片">
@@ -253,7 +277,7 @@
         页.style.cssText =
           'position:fixed;left:12px;right:12px;bottom:12px;padding:10px;border-radius:8px;' +
           'background:#2a1416;color:#ff9aa2;font:11px/1.5 monospace;white-space:pre-wrap;z-index:999';
-        页.textContent = '更多功能页面加载失败：\n' + (错误 && (错误.stack || 错误.message || 错误));
+        页.textContent = '外设页面加载失败：\n' + (错误 && (错误.stack || 错误.message || 错误));
         document.body.appendChild(页);
       });
     </script>

@@ -10,6 +10,7 @@ const { app, shell } = require('electron');
 const { 状态, 注册, 推送, 根目录, 安全文本, 内置工具目录 } = require('../core/context');
 const 快捷键 = require('../shortcuts');
 const 语言 = require('../languages');
+const 更新 = require('../updater');
 const { 连接设备 } = require('../session/session');
 
 function 注册设置接口() {
@@ -89,11 +90,26 @@ function 注册设置接口() {
     return fsp.readFile(全路径, 'utf8');
   });
 
-  /** 检查更新：目前只做占位说明，不做任何网络请求 */
-  注册('设置:检查更新', async () => ({
-    有更新: false,
-    说明: `当前版本 ${app.getVersion()}，这是开发版本，暂未接入自动更新。`,
-  }));
+  /* ---- 自动更新 ---- */
+
+  /** 检查 GitHub 上有没有新版本；连不上会先诊断网络 */
+  注册('设置:检查更新', async () => 更新.检查更新());
+
+  /**
+   * 执行更新。
+   *
+   * 下载可能很大（100MB+），进度通过 更新:进度 事件推给界面，
+   * 这里只负责启动并把最终结果返回。
+   */
+  注册('设置:执行更新', async ({ 产物 }) => {
+    if (!产物 || typeof 产物 !== 'object') throw new Error('缺少更新包信息');
+    // 只接受 GitHub 的下载地址，防止被引导到别处
+    if (!/^https:\/\/github\.com\//.test(String(产物.地址 || ''))) {
+      throw new Error('更新地址不是 GitHub，已拒绝');
+    }
+
+    return 更新.执行更新(产物, (进度) => 推送('更新:进度', 进度));
+  });
 
   /** 用系统浏览器打开链接（只允许 http/https） */
   注册('系统:打开链接', async ({ url }) => {

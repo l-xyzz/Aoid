@@ -2343,3 +2343,138 @@ select {
   background: var(--强调);
   color: #fff;
 }
+/* ---------- 更新对话框 ---------- */
+.版本对比 {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+  padding: 14px 0 18px;
+}
+
+.版本块 {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.版本标签 {
+  font-size: 10.5px;
+  color: var(--字-弱);
+}
+
+.版本号 {
+  font-size: 15px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.版本号.旧 {
+  color: var(--字-次);
+}
+
+.版本号.新 {
+  color: var(--强调);
+}
+
+.版本箭头 {
+  color: var(--字-弱);
+  font-size: 15px;
+}
+
+.更新说明标题 {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--字-次);
+  margin-bottom: 6px;
+}
+
+/* 更新日志：限制高度可滚动，避免超长日志把对话框撑爆 */
+.更新日志 {
+  max-height: 260px;
+  overflow-y: auto;
+  padding: 12px 14px;
+  border-radius: 8px;
+  background: var(--底-0);
+  border: 1px solid var(--线-弱);
+  font-size: 12px;
+}
+
+.更新日志:empty::before {
+  content: '（这个版本没有提供更新说明）';
+  color: var(--字-弱);
+}
+
+.更新进度区 {
+  margin-top: 14px;
+}
+
+.更新进度条 {
+  height: 6px;
+  border-radius: 999px;
+  background: var(--底-3);
+  overflow: hidden;
+}
+
+.更新进度填充 {
+  height: 100%;
+  width: 0;
+  border-radius: 999px;
+  background: var(--强调);
+  transition: width 0.2s ease;
+}
+
+.更新进度文字 {
+  margin-top: 7px;
+  font-size: 11px;
+  color: var(--字-次);
+  font-variant-numeric: tabular-nums;
+}
+
+.更新提示 {
+  margin-top: 12px;
+  padding: 9px 12px;
+  border-radius: 8px;
+  font-size: 12px;
+  line-height: 1.7;
+  background: var(--底-3);
+  color: var(--字-次);
+}
+
+.更新提示.错误 {
+  background: rgba(220, 80, 80, 0.12);
+  color: #e86a6a;
+}
+
+.更新提示.成功 {
+  background: rgba(62, 207, 142, 0.12);
+  color: #3ecf8e;
+}
+
+/* 对话框底部按钮区 */
+.对话框底 {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 14px 18px 16px;
+  border-top: 1px solid var(--线-弱);
+}
+/* 键鼠直连开启时：光标形态变化，让用户知道现在是外设模式 */
+.键鼠模式 .触控层 {
+  cursor: default;
+}
+
+.开关行 {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  cursor: pointer;
+  font-size: 12.5px;
+}
+
+.卡片说明.次要 {
+  margin-top: 10px;
+  font-size: 11px;
+  opacity: 0.75;
+}

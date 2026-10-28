@@ -1,5 +1,5 @@
 /**
- * 「更多功能」相关 IPC：摄像头、麦克风、虚拟摄像头、独立窗口。
+ * 「外设」相关 IPC：摄像头、麦克风、虚拟摄像头、独立窗口。
  */
 'use strict';
 
@@ -9,7 +9,7 @@ const { BrowserWindow } = require('electron');
 const { 状态, 注册, 推送, 安全文本, 根目录 } = require('../core/context');
 
 /**
- * 显示或隐藏「更多功能」窗口。
+ * 显示或隐藏「外设」窗口。
  *
  * 做成独立窗口而不是主界面的一块：摄像头预览、麦克风属于「开着一直用」
  * 的功能，可以单独拖动、最小化、放到第二块屏，关掉它也不影响投屏。
@@ -31,7 +31,7 @@ function 显示更多窗口(显示) {
     height: 700,
     minWidth: 420,
     minHeight: 520,
-    title: 'Aoid 更多功能',
+    title: 'Aoid 外设',
     parent: 状态.窗口,
     modal: false,
     show: false,
@@ -57,7 +57,7 @@ function 显示更多窗口(显示) {
   });
 }
 
-function 注册更多功能接口() {
+function 注册外设接口() {
   注册('更多:显示窗口', async ({ 显示 }) => {
     显示更多窗口(显示 !== false);
     return { 显示: 显示 !== false };
@@ -212,4 +212,4 @@ function 注册更多功能接口() {
   });
 }
 
-module.exports = { 注册更多功能接口, 显示更多窗口 };
+module.exports = { 注册外设接口, 显示更多窗口 };

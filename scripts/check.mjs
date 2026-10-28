@@ -71,6 +71,7 @@ const 脚本列表 = [
   'src/main/shortcuts.js',
   'src/main/wireless.js',
   'src/main/languages.js',
+  'src/main/updater.js',
   'src/renderer/js/app.js',
   'src/renderer/js/markdown.js',
   'src/renderer/js/i18n.js',

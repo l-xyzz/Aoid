@@ -98,6 +98,18 @@ const 元素 = {
   关于版本: $('关于版本'),
   检查更新: $('检查更新'),
   更新结果: $('更新结果'),
+  更新遮罩: $('更新遮罩'),
+  更新对话框: $('更新对话框'),
+  关闭更新: $('关闭更新'),
+  取消更新: $('取消更新'),
+  开始更新: $('开始更新'),
+  更新当前版本: $('更新当前版本'),
+  更新最新版本: $('更新最新版本'),
+  更新日志: $('更新日志'),
+  更新进度区: $('更新进度区'),
+  更新进度填充: $('更新进度填充'),
+  更新进度文字: $('更新进度文字'),
+  更新提示: $('更新提示'),
 
   添加设备遮罩: $('添加设备遮罩'),
   添加设备对话框: $('添加设备对话框'),
@@ -1409,6 +1421,263 @@ function 关闭文档() {
  * 语言包加载失败（文件被删了、JSON 写坏了）不会中断启动，
  * 界面保持中文，同时在设置里提示一下。
  */
+
+/* ------------------------------------------------------------------ */
+/* 键鼠直连（外设）                                                     */
+/* ------------------------------------------------------------------ */
+
+/**
+ * 键鼠直连：把电脑鼠标键盘转发给手机。
+ *
+ * 和普通触控的分工：
+ *   - 普通触控：按下才移动，松开就结束，像用手指点；
+ *   - 键鼠直连：鼠标一动就发 MOVE，不需要按住，像插了个鼠标。
+ *
+ * 开关在外设窗口里，主进程维护全局状态，这里每次事件都问一次
+ * （状态是缓存的，几乎没开销），关着就直接跳过。
+ */
+const 键鼠 = { 已开启: false, 按下中: false };
+
+function 初始化键鼠直连() {
+  // 同步一次当前状态
+  window.deck.键鼠.状态()
+    .then((r) => {
+      键鼠.已开启 = !!(r && r.开启);
+      元素.画布?.parentElement?.classList.toggle('键鼠模式', 键鼠.已开启);
+    })
+    .catch(() => {});
+
+  // 外设窗口切开关时，这里跟着变
+  window.deck.键鼠.状态变化(({ 开启 }) => {
+    键鼠.已开启 = !!开启;
+    元素.画布?.parentElement?.classList.toggle('键鼠模式', 键鼠.已开启);
+    if (!键鼠.已开启) 键鼠.按下中 = false;
+  });
+
+  const 层 = 元素.触控层;
+  if (!层) return;
+
+  /*
+   * 鼠标移动：直接发 MOVE，不要求按下。
+   * 用 requestAnimationFrame 节流到每帧一次，鼠标再快也不会刷爆 IPC。
+   */
+  let 待发 = null;
+  let 已排 = false;
+  const 排发 = (参数) => {
+    待发 = 参数;
+    if (已排) return;
+    已排 = true;
+    requestAnimationFrame(() => {
+      已排 = false;
+      const 目标 = 待发;
+      待发 = null;
+      if (目标) window.deck.键鼠.鼠标(目标).catch(() => {});
+    });
+  };
+
+  window.addEventListener('pointermove', (事件) => {
+    if (!键鼠.已开启 || !状态.已连接) return;
+    if (!状态.指针按下) {
+      const 坐标 = 换算坐标(事件, true);
+      if (!坐标) return;
+      排发({ 类型: '移动', x: 坐标.x, y: 坐标.y });
+    }
+  });
+
+  window.addEventListener('pointerdown', (事件) => {
+    if (!键鼠.已开启 || !状态.已连接) return;
+    // 只接管左键；右键留给原来的快捷键逻辑
+    if (事件.button !== 0) return;
+    // 普通触控逻辑已经处理了这次按下，避免重复注入
+    if (状态.指针按下) return;
+
+    const 坐标 = 换算坐标(事件, true);
+    if (!坐标) return;
+    键鼠.按下中 = true;
+    window.deck.键鼠.鼠标({ 类型: '按下', x: 坐标.x, y: 坐标.y }).catch(() => {});
+  });
+
+  window.addEventListener('pointerup', (事件) => {
+    if (!键鼠.已开启 || !键鼠.按下中) return;
+    if (事件.button !== 0) return;
+    键鼠.按下中 = false;
+    const 坐标 = 换算坐标(事件, true) || { x: 0, y: 0 };
+    window.deck.键鼠.鼠标({ 类型: '抬起', x: 坐标.x, y: 坐标.y }).catch(() => {});
+  });
+
+  window.addEventListener(
+    'wheel',
+    (事件) => {
+      if (!键鼠.已开启 || !状态.已连接) return;
+      const 坐标 = 换算坐标(事件, true);
+      if (!坐标) return;
+      事件.preventDefault();
+      const 竖向 = Math.max(-16, Math.min(16, Math.round(-事件.deltaY / 6)));
+      if (竖向) window.deck.键鼠.鼠标({ 类型: '滚轮', x: 坐标.x, y: 坐标.y, 竖向 }).catch(() => {});
+    },
+    { passive: false },
+  );
+
+  /*
+   * 键盘：只转发常用键（字母数字方向键回车等）。
+   * 输入框获得焦点时不拦截，否则用户没法在 Aoid 里打字。
+   */
+  window.addEventListener('keydown', (事件) => {
+    if (!键鼠.已开启 || !状态.已连接) return;
+    const 目标 = 事件.target;
+    if (目标 && (目标.tagName === 'INPUT' || 目标.tagName === 'TEXTAREA')) return;
+
+    window.deck.键鼠
+      .键盘({
+        code: 事件.code,
+        按下: true,
+        修饰: { shift: 事件.shiftKey, alt: 事件.altKey, ctrl: 事件.ctrlKey },
+      })
+      .catch(() => {});
+  });
+}
+
+/* ------------------------------------------------------------------ */
+/* 自动更新                                                            */
+/* ------------------------------------------------------------------ */
+
+/** 当前待安装的更新信息 */
+const 更新信息 = { 当前: null };
+
+/**
+ * 打开更新对话框。
+ *
+ * 用户要求：先放出旧版本号、新版本号、对应更新说明，再询问是否更新。
+ * 所以这里不做任何自动下载，一切等用户点「立即更新」。
+ */
+function 打开更新对话框(信息) {
+  更新信息.当前 = 信息;
+
+  元素.更新当前版本.textContent = 信息.当前版本 || '—';
+  元素.更新最新版本.textContent = 信息.最新版本 || '—';
+
+  // 更新说明是 Markdown，交给已有的渲染器
+  if (信息.更新日志) {
+    元素.更新日志.innerHTML = 渲染Markdown(信息.更新日志);
+  } else {
+    元素.更新日志.textContent = '';
+  }
+
+  // 每次打开都重置进度与提示，避免残留上次的状态
+  元素.更新进度区.hidden = true;
+  元素.更新进度填充.style.width = '0%';
+  元素.更新进度文字.textContent = '';
+  元素.更新提示.hidden = true;
+  元素.更新提示.className = '更新提示';
+  元素.开始更新.disabled = false;
+  元素.开始更新.textContent = '立即更新';
+  元素.取消更新.disabled = false;
+
+  元素.更新遮罩.hidden = false;
+  元素.更新对话框.hidden = false;
+}
+
+function 关闭更新对话框() {
+  元素.更新遮罩.hidden = true;
+  元素.更新对话框.hidden = true;
+}
+
+/** 显示一条结果提示 */
+function 显示更新提示(文字, 类型 = '') {
+  元素.更新提示.hidden = false;
+  元素.更新提示.className = '更新提示' + (类型 ? ' ' + 类型 : '');
+  元素.更新提示.textContent = 文字;
+}
+
+/** 把字节数变成人看得懂的大小 */
+function 格式化大小(字节) {
+  const 数 = Number(字节) || 0;
+  if (数 < 1024) return 数 + ' B';
+  if (数 < 1024 * 1024) return (数 / 1024).toFixed(0) + ' KB';
+  return (数 / 1024 / 1024).toFixed(1) + ' MB';
+}
+
+/** 开始下载并安装更新 */
+async function 开始安装更新() {
+  const 信息 = 更新信息.当前;
+  if (!信息 || !信息.产物) {
+    显示更新提示('没有可用的更新文件，请到 GitHub Releases 手动下载。', '错误');
+    return;
+  }
+
+  元素.开始更新.disabled = true;
+  元素.取消更新.disabled = true;
+  元素.开始更新.textContent = '正在更新…';
+  元素.更新进度区.hidden = false;
+  元素.更新提示.hidden = true;
+
+  try {
+    const 结果 = 取值(await window.deck.设置.执行更新(信息.产物));
+
+    if (结果.方式 === '便携版') {
+      // 便携版：批处理已排好，本进程必须退出才能覆盖 exe
+      元素.更新进度填充.style.width = '100%';
+      元素.更新进度文字.textContent = '下载完成';
+      显示更新提示('更新已下载完成。Aoid 将在关闭后自动替换并重新启动。', '成功');
+      元素.开始更新.textContent = '正在退出…';
+      setTimeout(() => 退出应用(), 2200);
+      return;
+    }
+
+    if (结果.方式 === '安装版') {
+      元素.更新进度填充.style.width = '100%';
+      元素.更新进度文字.textContent = '安装程序已启动';
+      显示更新提示('安装程序已启动，请按提示完成安装。安装完成后 Aoid 会自动重启。', '成功');
+      元素.开始更新.textContent = '安装中…';
+      return;
+    }
+
+    显示更新提示('更新请求已发出，但方式未知：' + 结果.方式, '错误');
+  } catch (错误) {
+    显示更新提示('更新失败：' + 错误.message, '错误');
+    元素.开始更新.disabled = false;
+    元素.取消更新.disabled = false;
+    元素.开始更新.textContent = '重试';
+  }
+}
+
+/** 退出应用（走主进程的正规关闭流程） */
+function 退出应用() {
+  window.deck.窗口?.关闭?.().catch(() => window.close());
+}
+
+/** 绑定更新对话框的按钮与进度事件 */
+function 绑定更新() {
+  元素.关闭更新.addEventListener('click', 关闭更新对话框);
+  元素.取消更新.addEventListener('click', 关闭更新对话框);
+  元素.更新遮罩.addEventListener('click', 关闭更新对话框);
+  元素.开始更新.addEventListener('click', 开始安装更新);
+
+  // 下载进度：主进程每 200ms 推一次
+  window.deck.设置.更新进度((进度) => {
+    if (!进度) return;
+
+    if (进度.阶段 === '下载') {
+      const 总 = Number(进度.总数) || 0;
+      const 已 = Number(进度.已收) || 0;
+      const 百分比 = 总 > 0 ? Math.min(100, Math.round((已 / 总) * 100)) : 0;
+      元素.更新进度填充.style.width = 百分比 + '%';
+      元素.更新进度文字.textContent = 总
+        ? '正在下载 ' + 百分比 + '%（' + 格式化大小(已) + ' / ' + 格式化大小(总) + '）'
+        : '已下载 ' + 格式化大小(已);
+      return;
+    }
+
+    if (进度.阶段 === '替换') {
+      元素.更新进度文字.textContent = '正在准备替换文件…';
+      return;
+    }
+    if (进度.阶段 === '安装') {
+      元素.更新进度文字.textContent = '正在启动安装程序…';
+    }
+  });
+}
+
 async function 初始化语言() {
   let 代码 = 'zh-CN';
   try {
@@ -1545,7 +1814,15 @@ function 绑定设置() {
     元素.更新结果.textContent = '正在检查…';
     try {
       const 结果 = 取值(await window.deck.设置.检查更新());
-      元素.更新结果.textContent = 结果.有更新 ? `发现新版本 ${结果.最新版本}` : 结果.说明;
+      元素.更新结果.textContent = 结果.说明;
+
+      if (结果.有更新) {
+        // 有新版：弹出对比窗口，让用户看清版本号和更新说明再决定
+        打开更新对话框(结果);
+      } else if (结果.诊断 && 结果.诊断 !== '正常') {
+        // 网络问题：把诊断结论说出来，用户才知道该怎么办
+        提示(结果.说明, '错误');
+      }
     } catch (错误) {
       元素.更新结果.textContent = 错误.message;
     }
@@ -1993,6 +2270,8 @@ async function 启动() {
   绑定设置();
   绑定添加设备();
   绑定声音开关();
+  绑定更新();
+  初始化键鼠直连();
 
   // 语言最先应用：后面的提示、列表都应该是目标语言
   await 初始化语言();

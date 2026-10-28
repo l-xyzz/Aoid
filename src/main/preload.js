@@ -104,7 +104,17 @@ contextBridge.exposeInMainWorld('deck', {
     控制: (动作) => ipcRenderer.invoke('媒体:控制', { 动作 }),
   },
 
-  /* ---- 更多功能：手机当摄像头 / 麦克风 ---- */
+  /* ---- 键鼠直连 ---- */
+  键鼠: {
+    设置: (开启) => ipcRenderer.invoke('外设:键鼠直连', { 开启 }),
+    状态: () => ipcRenderer.invoke('外设:键鼠状态'),
+    鼠标: (参数) => ipcRenderer.invoke('外设:鼠标', 参数),
+    键盘: (参数) => ipcRenderer.invoke('外设:键盘', 参数),
+    打字: (内容) => ipcRenderer.invoke('外设:打字', { 内容 }),
+    状态变化: (回调) => 订阅('外设:键鼠直连状态', 回调),
+  },
+
+  /* ---- 外设：手机当摄像头 / 麦克风 ---- */
   更多: {
     摄像头列表: () => ipcRenderer.invoke('更多:摄像头列表'),
     打开摄像头: (选项) => ipcRenderer.invoke('更多:打开摄像头', 选项),
@@ -144,6 +154,8 @@ contextBridge.exposeInMainWorld('deck', {
     动作表: () => ipcRenderer.invoke('设置:动作表'),
     文档: (名称) => ipcRenderer.invoke('设置:文档', { 名称 }),
     检查更新: () => ipcRenderer.invoke('设置:检查更新'),
+  执行更新: (产物) => ipcRenderer.invoke('设置:执行更新', { 产物 }),
+  更新进度: (回调) => 订阅('更新:进度', 回调),
     变化: (回调) => 订阅('设置:变化', 回调),
   },
 
