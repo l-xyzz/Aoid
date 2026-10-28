@@ -6,9 +6,9 @@ Aoid is a lightweight desktop app that mirrors your phone's screen and lets you 
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Platform](https://img.shields.io/badge/platform-Windows%20x64-blue)](https://github.com/l-xyzz/Aoid/releases)
-[![Status](https://img.shields.io/badge/status-beta-orange)](https://github.com/l-xyzz/Aoid/releases)
+[![Version](https://img.shields.io/badge/version-1.0.0-orange)](https://github.com/l-xyzz/Aoid/releases)
 
-> ⚠️ **Early development.** Aoid is a beta with known rough edges. Not recommended for production use yet — but feedback is very welcome.
+> **Version 1.0.0.** Core features are ready for daily use, but the project is still iterating quickly and device compatibility is being refined. Feedback is very welcome.
 
 ![Aoid interface](docs/screenshot.en.png)
 

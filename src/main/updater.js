@@ -147,7 +147,7 @@ async function 诊断网络() {
   }
 }
 
-/** 把 GitHub 的 tag（v0.7.0-beta.2）解析成可比较的版本 */
+/** 把 GitHub 的 tag（如 v1.0.0、v1.1.0-beta.1）解析成可比较的版本 */
 function 解析版本(文本) {
   const 干净 = String(文本 || '')
     .trim()
