@@ -95,6 +95,20 @@ npm start               # 启动应用
 npm run dev             # 启动并打开开发者工具
 ```
 
+<details>
+<summary><b>国内网络下载慢怎么办</b></summary>
+
+仓库里的 `.npmrc` 刻意没有写死镜像源，以保证国内外都能正常安装。
+如果你在国内，可以临时设置环境变量（不要改 `.npmrc`）：
+
+```bash
+npm config set registry https://registry.npmmirror.com
+set ELECTRON_MIRROR=https://npmmirror.com/mirrors/electron/
+set ELECTRON_BUILDER_BINARIES_MIRROR=https://npmmirror.com/mirrors/electron-builder-binaries/
+```
+
+</details>
+
 需要 Node.js 20 以上。
 
 > `scrcpy-runtime/` 和 `platform-tools/` 不进仓库（体积大且可重新下载），

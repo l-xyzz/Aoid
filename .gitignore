@@ -8,6 +8,8 @@ out/
 
 # 下载的第三方二进制（由 scripts/ 下的脚本生成）
 _build/
+# adb 三件套，约 8MB：npm run bundle:tools
+platform-tools/
 vendor/platform-tools/
 
 # 官方 scrcpy 运行组件（约 18MB，含 SDL2/ffmpeg）：按需自行放入，不进仓库

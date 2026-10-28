@@ -1,8 +1,8 @@
 {
-    "name": "Aoid",
+    "name": "aoid",
     "productName": "Aoid",
     "version": "0.7.0-beta.2",
-    "description": "轻量的电脑控制手机工具：USB 直连截图与触控，绿色免安装",
+    "description": "轻量的 Windows 电脑控制手机工具，基于 scrcpy 服务端。实时画面、跟手触控、中文输入、无线调试。",
     "license": "MIT",
     "author": "l-xyzz",
     "private": false,
@@ -17,7 +17,8 @@
         "lint": "node scripts/check.mjs",
         "fetch:server": "node scripts/fetch-scrcpy-server.mjs",
         "fetch:runtime": "node scripts/fetch-scrcpy-runtime.mjs",
-        "dist:safe": "node scripts/build-local.mjs"
+        "dist:safe": "node scripts/build-local.mjs",
+        "bundle:tools": "node scripts/bundle-tools.mjs"
     },
     "engines": {
         "node": ">=20"
@@ -36,5 +37,9 @@
         "remote-control",
         "usb",
         "electron"
-    ]
+    ],
+    "bugs": {
+        "url": "https://github.com/l-xyzz/Aoid/issues"
+    },
+    "homepage": "https://github.com/l-xyzz/Aoid#readme"
 }

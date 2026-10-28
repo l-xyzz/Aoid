@@ -41,7 +41,7 @@ body:
   - type: input
     id: 版本
     attributes:
-      label: PhoneDeck 版本
+      label: Aoid 版本
       description: 窗口左上角显示的版本号
       placeholder: v0.1.0
     validations:

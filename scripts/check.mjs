@@ -73,7 +73,6 @@ const 脚本列表 = [
   'src/renderer/js/app.js',
   'src/renderer/js/markdown.js',
   'src/renderer/js/player.js',
-  'src/renderer/js/muxer.js',
   'src/renderer/js/shortcuts-ui.js',
   'src/renderer/js/features.js',
   'scripts/notify.mjs',
