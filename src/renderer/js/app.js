@@ -2591,10 +2591,81 @@ async function 启动() {
   // 菜单里的「设置」把请求转给界面
   window.deck.菜单.打开设置((页) => 打开设置(页));
 
+  装上拖放上传();
+
   // 全局禁用右键菜单（右键已是「返回」）
   window.addEventListener('contextmenu', (e) => {
     if (e.target.closest('input, textarea, .文档内容')) return;
     e.preventDefault();
+  });
+}
+
+/* ---------- 拖文件进来直接传到手机 ---------- */
+
+/**
+ * 把文件拖到画面区就 push 到 /sdcard/Download/。
+ *
+ * Electron 32 起界面里拿不到 File.path，必须让 preload 用
+ * webUtils.getPathForFile 取真实路径（见 preload 的 文件.取路径）。
+ */
+function 装上拖放上传() {
+  const 区域 = document.querySelector('.画面区');
+  const 遮罩 = document.getElementById('拖放遮罩');
+  if (!区域 || !遮罩) return;
+
+  let 深度 = 0;
+
+  区域.addEventListener('dragenter', (事件) => {
+    if (!事件.dataTransfer || !Array.from(事件.dataTransfer.types).includes('Files')) return;
+    事件.preventDefault();
+    深度 += 1;
+    遮罩.hidden = false;
+  });
+
+  区域.addEventListener('dragover', (事件) => {
+    if (!事件.dataTransfer || !Array.from(事件.dataTransfer.types).includes('Files')) return;
+    事件.preventDefault();
+    事件.dataTransfer.dropEffect = 'copy';
+  });
+
+  区域.addEventListener('dragleave', () => {
+    深度 -= 1;
+    if (深度 <= 0) {
+      深度 = 0;
+      遮罩.hidden = true;
+    }
+  });
+
+  区域.addEventListener('drop', async (事件) => {
+    if (!事件.dataTransfer) return;
+    事件.preventDefault();
+    深度 = 0;
+    遮罩.hidden = true;
+
+    const 文件们 = Array.from(事件.dataTransfer.files || []);
+    if (!文件们.length) return;
+    if (!状态.已连接) return 提示('先连接一台设备', '错误');
+
+    let 成功 = 0;
+    for (const 文件 of 文件们) {
+      const 本地路径 = window.deck.文件.取路径(文件);
+      if (!本地路径) {
+        提示(`拿不到 ${文件.name} 的本地路径`, '错误');
+        continue;
+      }
+      try {
+        const 结果 = await window.deck.工具.上传文件(本地路径, '/sdcard/Aoid/');
+        if (!结果 || 结果.ok !== true) {
+          // 把主进程返回的原文带出来：以前这里只会显示一句「操作失败」，
+          // 而实际文件是传成功的，完全没法判断到底哪一步报了假错。
+          throw new Error(`返回：${JSON.stringify(结果)}`);
+        }
+        成功 += 1;
+      } catch (错误) {
+        提示(`传 ${文件.name} 失败：${错误.message || 错误}`, '错误');
+      }
+    }
+    if (成功) 提示(`已传到手机 /sdcard/Aoid/（${成功} 个）`, '成功');
   });
 }
 
