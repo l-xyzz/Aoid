@@ -387,6 +387,46 @@ class Adb {
     return this.设备shell(序列号, `mkdir -p "${目标}"`, { timeout: 15000 });
   }
 
+  /* ---------------- 手机端文件操作 ----------------
+   * 全部走 adb shell。路径一律用双引号包住，因为 /sdcard 下的文件名
+   * 经常带空格或中文，不加引号会被 shell 拆成多个参数。
+   */
+
+  /** 取路径的父目录（adb 里只有正斜杠，不能用 node:path） */
+  #父目录(目标) {
+    const 序 = 目标.lastIndexOf('/');
+    return 序 > 0 ? 目标.slice(0, 序) : '/';
+  }
+
+  /** 重命名：adb 没有 rename，用 mv 到同一目录下的新名字 */
+  async 重命名路径(序列号, 原路径, 新名) {
+    const 父 = this.#父目录(原路径);
+    const 新路径 = (父 === '/' ? '' : 父) + '/' + 新名;
+    if (新路径 === 原路径) return 原路径;
+    await this.设备shell(序列号, `mv -f "${原路径}" "${新路径}"`, { timeout: 20000 });
+    return 新路径;
+  }
+
+  /** 手机内部移动（剪切 → 粘贴） */
+  async 移动路径(序列号, 源, 目标目录) {
+    const 名 = 源.slice(源.lastIndexOf('/') + 1);
+    const 目标 = 目标目录.replace(/\/+$/, '') + '/' + 名;
+    if (目标 === 源) throw new Error('源和目标在同一个位置');
+    await this.设备shell(序列号, `mv -f "${源}" "${目标}"`, { timeout: 30000 });
+    return 目标;
+  }
+
+  /** 手机内部复制（cp -r 递归），目标已存在会失败，避免覆盖 */
+  async 复制路径(序列号, 源, 目标目录) {
+    const 名 = 源.slice(源.lastIndexOf('/') + 1);
+    const 目标 = 目标目录.replace(/\/+$/, '') + '/' + 名;
+    if (目标 === 源) throw new Error('源和目标在同一个位置');
+    const 已存在 = await this.设备shell(序列号, `[ -e "${目标}" ] && echo YES`, { timeout: 10000 });
+    if (/YES/.test(已存在 || '')) throw new Error('目标目录里已经有同名项了');
+    await this.设备shell(序列号, `cp -r "${源}" "${目标}"`, { timeout: 60000 });
+    return 目标;
+  }
+
   /** 安装 apk：-r 覆盖安装，-d 允许降级 */
   async 安装apk(序列号, 本地路径) {
     const 结果 = await this.#执行(

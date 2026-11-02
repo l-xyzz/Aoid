@@ -1,0 +1,533 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>Aoid 安装器深色样式预览</title>
+<style>
+  :root {
+    --页面底: #16181d;
+    --卡底: #1d2026;
+    --边框: #2b2f38;
+    --文字: #e8eaed;
+    --次要: #9aa3b0;
+    --强调: #f5a524;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    padding: 32px 24px 64px;
+    background: var(--页面底);
+    color: var(--文字);
+    font-family: "Microsoft YaHei", "PingFang SC", system-ui, sans-serif;
+  }
+  h1 {
+    font-size: 22px;
+    margin: 0 0 6px;
+    letter-spacing: .5px;
+  }
+  .副标题 {
+    color: var(--次要);
+    font-size: 13px;
+    margin-bottom: 28px;
+    line-height: 1.7;
+  }
+  .网格 {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(430px, 1fr));
+    gap: 28px;
+  }
+  .卡片 {
+    background: var(--卡底);
+    border: 1px solid var(--边框);
+    border-radius: 12px;
+    overflow: hidden;
+  }
+  .卡片头 {
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--边框);
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+  }
+  .样式名 {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--强调);
+    font-family: Consolas, monospace;
+  }
+  .说明 {
+    font-size: 12px;
+    color: var(--次要);
+  }
+  .推荐 {
+    margin-left: auto;
+    font-size: 11px;
+    background: var(--强调);
+    color: #0b0d10;
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-weight: 700;
+  }
+
+  /* ---------- 模拟安装向导窗口 ---------- */
+  .向导 {
+    --窗体: #202020;
+    --页底: #202020;
+    --文字色: #ffffff;
+    --控件底: #2b2b2b;
+    --控件边: #3c3c3c;
+    --按钮底: #333333;
+    --高亮: #4cc2ff;
+    --许可底: #1b1b1b;
+
+    background: var(--页底);
+    color: var(--文字色);
+    padding: 14px 16px 16px;
+    font-size: 12.5px;
+  }
+  .标题栏 {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding-bottom: 10px;
+    margin-bottom: 12px;
+    border-bottom: 1px solid var(--控件边);
+  }
+  .标题栏 .图标 {
+    width: 16px; height: 16px;
+    border-radius: 3px;
+    background: var(--强调);
+  }
+  .标题栏 .名 {
+    font-size: 12px;
+    color: var(--文字色);
+  }
+  .页标题 {
+    font-size: 15px;
+    font-weight: 700;
+    margin: 0 0 4px;
+  }
+  .页说明 {
+    color: var(--文字色);
+    opacity: .75;
+    margin-bottom: 12px;
+  }
+  .许可 {
+    height: 108px;
+    overflow: hidden;
+    background: var(--许可底);
+    border: 1px solid var(--控件边);
+    border-radius: 4px;
+    padding: 8px 10px;
+    font-family: Consolas, monospace;
+    font-size: 10.5px;
+    line-height: 1.55;
+    color: var(--文字色);
+    opacity: .88;
+    white-space: pre-wrap;
+  }
+  .单选行 {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    margin-top: 12px;
+  }
+  .圆点 {
+    width: 13px; height: 13px;
+    border-radius: 50%;
+    border: 1.5px solid var(--控件边);
+    flex: none;
+  }
+  .圆点.选中 {
+    border-color: var(--高亮);
+    box-shadow: inset 0 0 0 3px var(--高亮);
+  }
+  .底部按钮 {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    margin-top: 16px;
+    padding-top: 12px;
+    border-top: 1px solid var(--控件边);
+  }
+  .按钮 {
+    padding: 5px 20px;
+    border-radius: 3px;
+    border: 1px solid var(--控件边);
+    background: var(--按钮底);
+    color: var(--文字色);
+    font-size: 12px;
+  }
+  .按钮.主 {
+    border-color: var(--高亮);
+    outline: 1px solid var(--高亮);
+    outline-offset: -1px;
+  }
+
+  /* ---------- 各样式配色 ---------- */
+
+  /* dark：Inno 7 内置深色 */
+  .s-dark {
+    --页底: #202020;
+    --文字色: #ffffff;
+    --控件底: #2b2b2b;
+    --控件边: #3f3f3f;
+    --按钮底: #333333;
+    --高亮: #4cc2ff;
+    --许可底: #1a1a1a;
+  }
+  /* dark + 自定义背景 #0B0D10 */
+  .s-dark-custom {
+    --页底: #0b0d10;
+    --文字色: #e8eaed;
+    --控件底: #171a1f;
+    --控件边: #2b3038;
+    --按钮底: #1d2026;
+    --高亮: #f5a524;
+    --许可底: #12151a;
+  }
+  /* polar */
+  .s-polar {
+    --页底: #10202e;
+    --文字色: #e6f1f8;
+    --控件底: #16303f;
+    --控件边: #24485c;
+    --按钮底: #16303f;
+    --高亮: #5bc8f5;
+    --许可底: #0c1a25;
+  }
+  /* slate */
+  .s-slate {
+    --页底: #2e3238;
+    --文字色: #e9ecef;
+    --控件底: #3a3f47;
+    --控件边: #4c525b;
+    --按钮底: #3a3f47;
+    --高亮: #8ab4f8;
+    --许可底: #25292e;
+  }
+  /* stellar（上一版用的，浅字浅底问题） */
+  .s-stellar {
+    --页底: #202020;
+    --文字色: #ffffff;
+    --控件底: #ffffff;
+    --控件边: #d0d0d0;
+    --按钮底: #ffffff;
+    --高亮: #4cc2ff;
+    --许可底: #dfe9f5;   /* ← 就是这个浅蓝底，刺眼 */
+  }
+  /* windows11 */
+  .s-win11 {
+    --页底: #1f1f1f;
+    --文字色: #ffffff;
+    --控件底: #2d2d2d;
+    --控件边: #414141;
+    --按钮底: #2d2d2d;
+    --高亮: #60cdff;
+    --许可底: #1a1a1a;
+  }
+  /* dynamic（跟随系统；此处按系统深色展示） */
+  .s-dynamic {
+    --页底: #1c1c1c;
+    --文字色: #ffffff;
+    --控件底: #282828;
+    --控件边: #3a3a3a;
+    --按钮底: #303030;
+    --高亮: #4cc2ff;
+    --许可底: #161616;
+  }
+  /* zircon（浅色，供对比） */
+  .s-zircon {
+    --页底: #f4f8fb;
+    --文字色: #1d2733;
+    --控件底: #ffffff;
+    --控件边: #c5d5e2;
+    --按钮底: #ffffff;
+    --高亮: #16a3c9;
+    --许可底: #ffffff;
+  }
+  .许可样例 {
+    color: inherit;
+  }
+  .页脚 {
+    margin-top: 36px;
+    padding-top: 20px;
+    border-top: 1px solid var(--边框);
+    color: var(--次要);
+    font-size: 12.5px;
+    line-height: 1.9;
+  }
+  code {
+    background: #22262e;
+    padding: 1px 6px;
+    border-radius: 4px;
+    font-family: Consolas, monospace;
+    color: var(--强调);
+    font-size: 12px;
+  }
+</style>
+</head>
+<body>
+
+<h1>Aoid 安装器 · 深色样式预览</h1>
+<div class="副标题">
+  下面是 Inno Setup 7 支持的几种配色在安装向导里的实际观感。<br>
+  每张卡片模拟的是「许可协议」这一步——这一步最能看出控件有没有跟着一起变深。
+</div>
+
+<div class="网格">
+
+  <!-- 1. dark + 自定义背景：推荐 -->
+  <div class="卡片">
+    <div class="卡片头">
+      <span class="样式名">dark</span>
+      <span class="说明">内置深色 + 自定义 #0B0D10</span>
+      <span class="推荐">推荐</span>
+    </div>
+    <div class="向导 s-dark-custom">
+      <div class="标题栏">
+        <div class="图标"></div><span class="名">安装 - Aoid 1.0.0</span>
+      </div>
+      <div class="页标题">许可协议</div>
+      <div class="页说明">请在继续安装前阅读以下重要信息。</div>
+      <div class="许可">MIT License
+
+Copyright (c) 2026 l-xyzz
+
+Permission is hereby granted, free of charge, to any person
+obtaining a copy of this software and associated documentation
+files (the "Software"), to deal in the Software without
+restriction, including without limitation the rights to use,
+copy, modify, merge, publish, distribute, sublicense...</div>
+      <div class="单选行"><span class="圆点 选中"></span>我同意此协议(A)</div>
+      <div class="单选行"><span class="圆点"></span>我不同意此协议(D)</div>
+      <div class="底部按钮">
+        <button class="按钮 主">下一步(N)</button>
+        <button class="按钮">取消</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 2. dark 默认 -->
+  <div class="卡片">
+    <div class="卡片头">
+      <span class="样式名">dark</span>
+      <span class="说明">内置深色，默认配色</span>
+    </div>
+    <div class="向导 s-dark">
+      <div class="标题栏">
+        <div class="图标"></div><span class="名">安装 - Aoid 1.0.0</span>
+      </div>
+      <div class="页标题">许可协议</div>
+      <div class="页说明">请在继续安装前阅读以下重要信息。</div>
+      <div class="许可">MIT License
+
+Copyright (c) 2026 l-xyzz
+
+Permission is hereby granted, free of charge, to any person
+obtaining a copy of this software and associated documentation
+files (the "Software"), to deal in the Software without
+restriction, including without limitation the rights to use,
+copy, modify, merge, publish, distribute, sublicense...</div>
+      <div class="单选行"><span class="圆点 选中"></span>我同意此协议(A)</div>
+      <div class="单选行"><span class="圆点"></span>我不同意此协议(D)</div>
+      <div class="底部按钮">
+        <button class="按钮 主">下一步(N)</button>
+        <button class="按钮">取消</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3. polar -->
+  <div class="卡片">
+    <div class="卡片头">
+      <span class="样式名">dark polar</span>
+      <span class="说明">深蓝调</span>
+    </div>
+    <div class="向导 s-polar">
+      <div class="标题栏">
+        <div class="图标"></div><span class="名">安装 - Aoid 1.0.0</span>
+      </div>
+      <div class="页标题">许可协议</div>
+      <div class="页说明">请在继续安装前阅读以下重要信息。</div>
+      <div class="许可">MIT License
+
+Copyright (c) 2026 l-xyzz
+
+Permission is hereby granted, free of charge, to any person
+obtaining a copy of this software and associated documentation
+files (the "Software"), to deal in the Software without
+restriction, including without limitation the rights to use,
+copy, modify, merge, publish, distribute, sublicense...</div>
+      <div class="单选行"><span class="圆点 选中"></span>我同意此协议(A)</div>
+      <div class="单选行"><span class="圆点"></span>我不同意此协议(D)</div>
+      <div class="底部按钮">
+        <button class="按钮 主">下一步(N)</button>
+        <button class="按钮">取消</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 4. slate -->
+  <div class="卡片">
+    <div class="卡片头">
+      <span class="样式名">dark slate</span>
+      <span class="说明">中性灰</span>
+    </div>
+    <div class="向导 s-slate">
+      <div class="标题栏">
+        <div class="图标"></div><span class="名">安装 - Aoid 1.0.0</span>
+      </div>
+      <div class="页标题">许可协议</div>
+      <div class="页说明">请在继续安装前阅读以下重要信息。</div>
+      <div class="许可">MIT License
+
+Copyright (c) 2026 l-xyzz
+
+Permission is hereby granted, free of charge, to any person
+obtaining a copy of this software and associated documentation
+files (the "Software"), to deal in the Software without
+restriction, including without limitation the rights to use,
+copy, modify, merge, publish, distribute, sublicense...</div>
+      <div class="单选行"><span class="圆点 选中"></span>我同意此协议(A)</div>
+      <div class="单选行"><span class="圆点"></span>我不同意此协议(D)</div>
+      <div class="底部按钮">
+        <button class="按钮 主">下一步(N)</button>
+        <button class="按钮">取消</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 5. windows11 -->
+  <div class="卡片">
+    <div class="卡片头">
+      <span class="样式名">dark windows11</span>
+      <span class="说明">Win11 风格</span>
+    </div>
+    <div class="向导 s-win11">
+      <div class="标题栏">
+        <div class="图标"></div><span class="名">安装 - Aoid 1.0.0</span>
+      </div>
+      <div class="页标题">许可协议</div>
+      <div class="页说明">请在继续安装前阅读以下重要信息。</div>
+      <div class="许可">MIT License
+
+Copyright (c) 2026 l-xyzz
+
+Permission is hereby granted, free of charge, to any person
+obtaining a copy of this software and associated documentation
+files (the "Software"), to deal in the Software without
+restriction, including without limitation the rights to use,
+copy, modify, merge, publish, distribute, sublicense...</div>
+      <div class="单选行"><span class="圆点 选中"></span>我同意此协议(A)</div>
+      <div class="单选行"><span class="圆点"></span>我不同意此协议(D)</div>
+      <div class="底部按钮">
+        <button class="按钮 主">下一步(N)</button>
+        <button class="按钮">取消</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 6. dynamic -->
+  <div class="卡片">
+    <div class="卡片头">
+      <span class="样式名">dynamic</span>
+      <span class="说明">跟随系统主题（图示为系统深色时）</span>
+    </div>
+    <div class="向导 s-dynamic">
+      <div class="标题栏">
+        <div class="图标"></div><span class="名">安装 - Aoid 1.0.0</span>
+      </div>
+      <div class="页标题">许可协议</div>
+      <div class="页说明">请在继续安装前阅读以下重要信息。</div>
+      <div class="许可">MIT License
+
+Copyright (c) 2026 l-xyzz
+
+Permission is hereby granted, free of charge, to any person
+obtaining a copy of this software and associated documentation
+files (the "Software"), to deal in the Software without
+restriction, including without limitation the rights to use,
+copy, modify, merge, publish, distribute, sublicense...</div>
+      <div class="单选行"><span class="圆点 选中"></span>我同意此协议(A)</div>
+      <div class="单选行"><span class="圆点"></span>我不同意此协议(D)</div>
+      <div class="底部按钮">
+        <button class="按钮 主">下一步(N)</button>
+        <button class="按钮">取消</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 7. stellar：上一版，问题样式 -->
+  <div class="卡片">
+    <div class="卡片头">
+      <span class="样式名">stellar</span>
+      <span class="说明">上一版用的——看许可框那块浅蓝</span>
+    </div>
+    <div class="向导 s-stellar">
+      <div class="标题栏">
+        <div class="图标"></div><span class="名">安装 - Aoid 1.0.0</span>
+      </div>
+      <div class="页标题">许可协议</div>
+      <div class="页说明">请在继续安装前阅读以下重要信息。</div>
+      <div class="许可">MIT License
+
+Copyright (c) 2026 l-xyzz
+
+Permission is hereby granted, free of charge, to any person
+obtaining a copy of this software and associated documentation
+files (the "Software"), to deal in the Software without
+restriction, including without limitation the rights to use,
+copy, modify, merge, publish, distribute, sublicense...</div>
+      <div class="单选行"><span class="圆点 选中"></span>我同意此协议(A)</div>
+      <div class="单选行"><span class="圆点"></span>我不同意此协议(D)</div>
+      <div class="底部按钮">
+        <button class="按钮 主">下一步(N)</button>
+        <button class="按钮">取消</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 8. zircon：浅色对比 -->
+  <div class="卡片">
+    <div class="卡片头">
+      <span class="样式名">zircon</span>
+      <span class="说明">浅色，仅作对比</span>
+    </div>
+    <div class="向导 s-zircon">
+      <div class="标题栏">
+        <div class="图标"></div><span class="名">安装 - Aoid 1.0.0</span>
+      </div>
+      <div class="页标题">许可协议</div>
+      <div class="页说明">请在继续安装前阅读以下重要信息。</div>
+      <div class="许可">MIT License
+
+Copyright (c) 2026 l-xyzz
+
+Permission is hereby granted, free of charge, to any person
+obtaining a copy of this software and associated documentation
+files (the "Software"), to deal in the Software without
+restriction, including without limitation the rights to use,
+copy, modify, merge, publish, distribute, sublicense...</div>
+      <div class="单选行"><span class="圆点 选中"></span>我同意此协议(A)</div>
+      <div class="单选行"><span class="圆点"></span>我不同意此协议(D)</div>
+      <div class="底部按钮">
+        <button class="按钮 主">下一步(N)</button>
+        <button class="按钮">取消</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div class="页脚">
+  <strong>说明</strong><br>
+  · 预览是 HTML 模拟的近似效果，真实观感以编译出来的安装包为准。<br>
+  · <code>WizardStyle</code> 可用的值：<code>classic modern light dark dynamic polar slate stellar windows11 zircon</code><br>
+  · 可叠加的修饰符：<code>hidebevels</code>（去掉分隔线）、<code>includetitlebar</code>、<code>excludelightcontrols</code><br>
+  · 自定义背景色：<code>WizardBackColor=$00BBGGRR</code>（注意是 BGR 顺序，不是 RGB）<br>
+  · 想换哪个直接告诉我，我改 <code>build/installer.iss</code> 重新编译。
+</div>
+
+</body>
+</html>

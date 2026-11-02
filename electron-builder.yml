@@ -45,6 +45,15 @@ extraResources:
   # 官方 scrcpy 运行组件：音频播放由它负责（务必一起打包）
   - from: scrcpy-runtime
     to: scrcpy-runtime
+    filter:
+      # scrcpy-runtime 目录里自带一份 adb（约 8MB），但程序优先用
+      # resources/platform-tools 下那份（见 core/context.js 的 内置工具目录），
+      # 这里那份永远不会被读取，排除掉省 8MB。
+      - '!adb.exe'
+      - '!AdbWinApi.dll'
+      - '!AdbWinUsbApi.dll'
+      # 运行期产生的录音缓存，没必要打包
+      - '!mic-cache/**'
   # 随包附带 adb，首次运行不必再下载
   - from: platform-tools
     to: platform-tools
@@ -54,6 +63,20 @@ extraResources:
       - 'AdbWinUsbApi.dll'
 
 asar: true
+
+# 打包完成后清理用不到的 Chromium 组件（见 scripts/after-pack.js）
+afterPack: scripts/after-pack.js
+
+# 只保留实际用到的 Chromium 语言包。
+#
+# 默认会打全部 55 种语言，共 48.8 MB，其中最大的几个（ml/ta/kn/te/hi）单个就 1.7MB。
+# Aoid 界面只有中文和英文，留这两个 + 繁体中文（用户可能用港台系统）足够，
+# **不影响任何功能**，只是省掉 45MB 无用的翻译文件。
+electronLanguages:
+  - zh-CN
+  - zh-TW
+  - en-US
+  - en-GB
 compression: maximum
 
 win:
@@ -82,11 +105,16 @@ nsis:
   # 卸载时保留用户数据（设置、历史设备），重新装回来还能接着用。
   # 想彻底清干净的话，卸载后手动删 %APPDATA%\Aoid。
   deleteAppDataOnUninstall: false
-  # 安装完成后直接启动
-  runAfterFinish: true
+  # 安装完成后不自动启动。
+  # 自动启动会在安装器收尾时又拉起 Aoid.exe，
+  # 导致「文件仍被占用」→ 进度条反复倒退重试。
+  # 用户点桌面快捷方式启动即可，代价几乎为零。
+  runAfterFinish: false
   # 卸载程序显示名，控制面板里看到的就是这个
   uninstallDisplayName: Aoid ${version}
   artifactName: Aoid-${version}-Setup.${ext}
+  # 安装前强制结束旧进程，避免「Aoid 无法关闭」提示（见 build/installer.nsh）
+  include: build/installer.nsh
 
 # ---- 便携版 ----
 portable:

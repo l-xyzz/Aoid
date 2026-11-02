@@ -6,6 +6,7 @@
  */
 'use strict';
 
+const fsApi = require('node:fs');
 const fsp = require('node:fs/promises');
 const path = require('node:path');
 const os = require('node:os');
@@ -16,6 +17,16 @@ const { 状态, 注册, 推送, 安全文本, 根目录 } = require('../core/con
 function 取设备() {
   if (!状态.adb || !状态.设备) throw new Error('还没有连接设备');
   return 状态.设备;
+}
+
+/** 全局鼠标跟踪的定时器（拖动期间才跑） */
+let 鼠标跟踪定时 = null;
+
+function 停止跟踪鼠标() {
+  if (鼠标跟踪定时) {
+    clearInterval(鼠标跟踪定时);
+    鼠标跟踪定时 = null;
+  }
 }
 
 /** 跑一条 adb 命令，返回 stdout（控制台用） */
@@ -38,10 +49,114 @@ function 跑命令(序列号, 命令, 超时 = 30000) {
   });
 }
 
+/**
+ * 从 `cmd package list packages` 之外再补一次应用显示名。
+ *
+ * 难点：Android 没有「一条命令列出所有应用名」的稳定接口。
+ *   - pm list packages        只有包名
+ *   - dumpsys package <pkg>   有 labelRes 但没有文字（要自己解资源）
+ *   - 用 aapt 读 APK         要额外二进制，且系统 APK 读不到
+ *
+ * 实测可行且足够的做法：读每个 APK 里的 `resources.arsc` 太复杂，
+ * 退一步用 **Launcher 的活动标签** —— `cmd package query-activities`
+ * 能一次拿到所有 LAUNCHER 入口及其 label，覆盖了「用户能点开的应用」，
+ * 正好就是应用管理里要展示的那批。
+ *
+ * 拿不到就返回空表，界面用包名兜底，不影响使用。
+ */
+function 提取应用标签(文本) {
+  const 表 = new Map();
+  /*
+   * query-activities 的输出形如：
+   *   Activity #0:
+   *     ...
+   *     packageName=com.tencent.mm
+   *     nonLocalizedLabel=微信
+   */
+  let 当前包 = '';
+  for (const 行 of String(文本 || '').split(/\r?\n/)) {
+    const 包匹配 = /packageName=([\w.]+)/.exec(行);
+    if (包匹配) {
+      当前包 = 包匹配[1];
+      continue;
+    }
+    const 标签匹配 = /nonLocalizedLabel=(.+?)(?:\s|$)/.exec(行);
+    if (标签匹配 && 当前包 && !表.has(当前包)) {
+      const 标签 = 标签匹配[1].trim();
+      if (标签 && 标签 !== 'null') 表.set(当前包, 标签);
+    }
+  }
+  return 表;
+}
+
 function 注册工具接口() {
   /** 显示 / 隐藏工具窗口 */
   注册('工具:显示窗口', async ({ 显示 }) => {
     显示工具窗口(显示 !== false);
+    return { ok: true };
+  });
+
+  /**
+   * 开始 / 结束「全局鼠标跟踪」。
+   *
+   * 用途：用户按住拖手机画面时，把鼠标甩出应用窗口外，
+   * 浏览器就收不到 pointermove 了，拖动会停在窗口边缘不动。
+   *
+   * 解法：拖动期间由主进程用 screen.getCursorScreenPoint() 读**系统级**
+   * 鼠标坐标（不依赖窗口焦点和边界），定期推给渲染进程，
+   * 渲染进程换算成手机坐标继续发送移动事件。
+   *
+   * 这样表现就和触摸屏一致：手指滑出屏幕边缘，内容继续跟着走。
+   */
+  注册('工具:跟踪鼠标', async ({ 开启 }) => {
+    停止跟踪鼠标();
+    if (开启 !== true) return { ok: true };
+
+    const { screen } = require('electron');
+    const 主窗 = 状态.窗口;
+    if (!主窗 || 主窗.isDestroyed()) return { ok: false };
+
+    /*
+     * 报的是「窗口客户区内的坐标」，由主进程自己算 ——
+     * getCursorScreenPoint 给的是屏幕坐标，必须减去窗口内容区的位置，
+     * 否则多显示器、窗口移动后坐标全错。
+     *
+     * 用 16ms（约 60fps）轮询，和屏幕刷新率对齐。
+     */
+    鼠标跟踪定时 = setInterval(() => {
+      if (!主窗 || 主窗.isDestroyed()) {
+        停止跟踪鼠标();
+        return;
+      }
+      try {
+        const 点 = screen.getCursorScreenPoint();
+        const 边界 = 主窗.getContentBounds();
+        主窗.webContents.send('工具:鼠标位置', {
+          x: 点.x - 边界.x,
+          y: 点.y - 边界.y,
+          // 同时带上窗口尺寸，渲染进程据此判断是否越界
+          宽: 边界.width,
+          高: 边界.height,
+        });
+      } catch {
+        // 窗口正在销毁时取边界会抛，忽略
+      }
+    }, 16);
+
+    return { ok: true };
+  });
+
+  /**
+   * ADB 控制台独立窗口。
+   *
+   * 从「更多功能」里拆出来单独成一个窗口，原因：
+   *   - 控制台是「常驻、边看边敲」的工具，和文件管理/应用管理那种
+   *     「点进去做完就走」的用途不同
+   *   - 独立窗口可以和主窗口并排摆着，一边看手机画面一边敲命令
+   *   - 也避免在标签页之间来回切
+   */
+  注册('工具:显示控制台', async ({ 显示 }) => {
+    显示控制台窗口(显示 !== false);
     return { ok: true };
   });
 
@@ -50,7 +165,7 @@ function 注册工具接口() {
 
   /* ================= 应用管理 ================= */
 
-  /** 列出已安装应用（含系统应用标记） */
+  /** 列出已安装应用（含系统应用标记 + 应用显示名称） */
   注册('工具:应用列表', async () => {
     const 序列号 = 取设备();
     // -f 带 apk 路径，-3 只列第三方，我们两个都列然后标出来
@@ -70,10 +185,43 @@ function 注册工具接口() {
       if (等号 < 0) continue;
       const apk路径 = 体.slice(0, 等号);
       const 包名 = 体.slice(等号 + 1);
-      列表.push({ 包名, apk路径, 系统: apk路径.startsWith('/system') || apk路径.startsWith('/product') });
+      列表.push({
+        包名,
+        apk路径,
+        系统: apk路径.startsWith('/system') || apk路径.startsWith('/product'),
+        名称: '',
+      });
     }
 
-    列表.sort((a, b) => a.包名.localeCompare(b.包名));
+    /*
+     * 取应用显示名称。
+     *
+     * 用 `cmd package query-activities` 一次拿到所有 LAUNCHER 入口及其 label，
+     * 覆盖了「用户能点开的应用」，正好就是应用管理要展示的那批。
+     *
+     * 为什么不用 dumpsys package：那里只有 labelRes（资源 ID），
+     * 要拿到文字得自己解 resources.arsc，代价太大。
+     */
+    try {
+      const { stdout: 活动文本 } = await 状态.adb.设备shell(
+        序列号,
+        'cmd package query-activities --brief -a android.intent.action.MAIN -c android.intent.category.LAUNCHER 2>/dev/null',
+        { timeout: 30000, maxBuffer: 32 * 1024 * 1024 },
+      );
+      const 标签表 = 提取应用标签(活动文本);
+      for (const 项 of 列表) {
+        if (标签表.has(项.包名)) 项.名称 = 标签表.get(项.包名);
+      }
+    } catch {
+      // 拿不到名称就用包名兜底，功能不受影响
+    }
+
+    列表.sort((a, b) => {
+      // 有名称的按名称排，没有的按包名排
+      const a键 = a.名称 || a.包名;
+      const b键 = b.名称 || b.包名;
+      return a键.localeCompare(b键, 'zh-CN');
+    });
     return 列表;
   });
 
@@ -192,6 +340,32 @@ function 注册工具接口() {
     return { ok: true };
   });
 
+  /* ---- 手机端文件操作：重命名 / 移动 / 复制 ---- */
+
+  /** 重命名手机上的文件或目录 */
+  注册('工具:手机重命名', async ({ 路径: 目标, 新名 }) => {
+    const 名字 = String(新名 || '').trim();
+    if (!名字) throw new Error('名称不能为空');
+    if (/[\/]/.test(名字)) throw new Error('名称不能包含 / 或 \\');
+    const 序列号 = 取设备();
+    const 新路径 = await 状态.adb.重命名路径(序列号, 目标, 名字);
+    return { ok: true, 路径: 新路径 };
+  });
+
+  /** 手机内部移动（剪切 → 粘贴） */
+  注册('工具:手机移动', async ({ 源, 目标目录 }) => {
+    const 序列号 = 取设备();
+    const 目标 = await 状态.adb.移动路径(序列号, 源, 目标目录);
+    return { ok: true, 路径: 目标 };
+  });
+
+  /** 手机内部复制（复制 → 粘贴） */
+  注册('工具:手机复制', async ({ 源, 目标目录 }) => {
+    const 序列号 = 取设备();
+    const 目标 = await 状态.adb.复制路径(序列号, 源, 目标目录);
+    return { ok: true, 路径: 目标 };
+  });
+
   /** 手机 → 电脑：下载 */
   注册('工具:下载文件', async ({ 设备路径, 本地路径 }) => {
     const 序列号 = 取设备();
@@ -217,19 +391,44 @@ function 注册工具接口() {
   注册('工具:盘符列表', async () => {
     if (process.platform !== 'win32') return [{ 名称: '/', 路径: '/' }];
 
-    const 列表 = [];
-    // 从 A 到 Z 试探：目录存在就是可用盘符
+    /*
+     * 并发探测所有盘符，并且给每个探测加超时。
+     *
+     * 空光驱、待机的移动硬盘、断开的网络映射盘在 fs.stat 时会卡住
+     * 几十秒甚至更久。串行等待会让整个盘符列表迟迟不出现，
+     * 用户看到的就是「读取失败」或者一片空白。
+     * 这里并发发起，超时就当那个盘不可用。
+     */
+    const 探测 = 600; // 毫秒
+    const 任务 = [];
     for (let i = 65; i <= 90; i += 1) {
-      const 盘 = String.fromCharCode(i) + ':/';
-      try {
-        const 状态 = await fsp.stat(盘);
-        if (状态.isDirectory()) {
-          列表.push({ 名称: String.fromCharCode(i) + ':', 路径: String.fromCharCode(i) + '\\' });
-        }
-      } catch {
-        // 不存在的盘符直接跳过
-      }
+      const 字母 = String.fromCharCode(i);
+      任务.push(
+        Promise.race([
+          fsp
+            .stat(字母 + ':/')
+            .then((状态) => (状态.isDirectory() ? 字母 : null))
+            .catch(() => null),
+          new Promise((解析) => setTimeout(() => 解析(null), 探测)),
+        ]),
+      );
     }
+
+    const 结果 = await Promise.all(任务);
+    const 列表 = [];
+    for (const 字母 of 结果) {
+      if (!字母) continue;
+      列表.push({
+        名称: 字母 + ':',
+        /*
+         * 路径必须带冒号再跟一个反斜杠，拼成 "G:\"。
+         * 原实现写成了 String.fromCharCode(i) + "\\"，少了冒号，
+         * 得到的是 "G\"，readdir 会报 ENOENT —— 就是「读不了磁盘」的根因。
+         */
+        路径: 字母 + ':\\',
+      });
+    }
+
     return 列表;
   });
 
@@ -297,6 +496,86 @@ function 注册工具接口() {
    * 不做任何过滤：这是"进阶工具"的定位，用户要的就是原生能力。
    * 为了安全，只允许通过 adb shell 执行，不会落到电脑的 shell 上。
    */
+  /* ---- 电脑文件操作：打开 / 重命名 / 移动(剪切粘贴) ---- */
+
+  /**
+   * 用系统默认方式打开一个文件或文件夹。
+   *
+   * shell.openPath 会交给 Windows 用关联程序打开：
+   *   .txt → 记事本、.png → 看图、文件夹 → 资源管理器。
+   * 返回空字符串表示成功，非空字符串是错误说明。
+   */
+  注册('工具:电脑打开', async ({ 路径: 目标 }) => {
+    const { shell } = require('electron');
+    const 错误 = await shell.openPath(目标);
+    if (错误) throw new Error('打不开：' + 错误);
+    return { ok: true };
+  });
+
+  /** 重命名（同目录内改名，也可用于修改扩展名） */
+  注册('工具:电脑重命名', async ({ 路径: 目标, 新名 }) => {
+    const path = require('node:path');
+    const 名字 = String(新名 || '').trim();
+    if (!名字) throw new Error('名称不能为空');
+    if (/[\\/:*?"<>|]/.test(名字)) {
+      throw new Error('名称不能包含 \\ / : * ? " < > | 这些字符');
+    }
+
+    const 所在目录 = path.dirname(目标);
+    const 新路径 = path.join(所在目录, 名字);
+
+    if (新路径 === 目标) return { ok: true, 路径: 目标 };
+
+    // 目标已存在时不覆盖，避免误删
+    if (fsApi.existsSync(新路径)) {
+      throw new Error('同一目录下已经有同名文件了');
+    }
+
+    await fsp.rename(目标, 新路径);
+    return { ok: true, 路径: 新路径 };
+  });
+
+  /**
+   * 移动文件或目录（剪切 → 粘贴）。
+   *
+   * 同盘直接 rename 是瞬时的；跨盘 rename 会报 EXDEV，
+   * 这时退回「复制 + 删除」。
+   */
+  注册('工具:电脑移动', async ({ 源, 目标目录 }) => {
+    const path = require('node:path');
+    const 目标 = path.join(目标目录, path.basename(源));
+
+    if (目标 === 源) throw new Error('源和目标在同一个位置');
+    if (fsApi.existsSync(目标)) throw new Error('目标目录里已经有同名项了');
+
+    try {
+      await fsp.rename(源, 目标);
+    } catch (错误) {
+      if (错误.code !== 'EXDEV') throw 错误;
+      // 跨盘：先复制再删原件
+      await fsp.cp(源, 目标, { recursive: true });
+      await fsp.rm(源, { recursive: true, force: true });
+    }
+    return { ok: true, 路径: 目标 };
+  });
+
+  /** 复制（复制 → 粘贴） */
+  /** 删除电脑上的文件或目录 */
+  注册('工具:电脑删除', async ({ 路径: 目标 }) => {
+    if (!目标) throw new Error('没有指定路径');
+    await fsp.rm(目标, { recursive: true, force: true });
+    return { ok: true };
+  });
+
+  注册('工具:电脑复制', async ({ 源, 目标目录 }) => {
+    const path = require('node:path');
+    const 目标 = path.join(目标目录, path.basename(源));
+    if (目标 === 源) throw new Error('源和目标在同一个位置');
+    if (fsApi.existsSync(目标)) throw new Error('目标目录里已经有同名项了');
+    await fsp.cp(源, 目标, { recursive: true });
+    return { ok: true, 路径: 目标 };
+  });
+
   注册('工具:执行命令', async ({ 命令 }) => {
     const 序列号 = 取设备();
     const 内容 = String(命令 || '').trim();
@@ -342,6 +621,66 @@ function 注册工具接口() {
  * 用户可能要一边看文件列表一边在控制台敲命令，
  * 塞进主界面会把投屏区域挤得没法看。
  */
+/**
+ * ADB 控制台独立窗口。
+ *
+ * 和「更多功能」窗口完全独立：单独的 BrowserWindow、单独的状态字段，
+ * 关掉互不影响。用户可以一边看着主窗口的手机画面，一边在旁边敲 adb 命令。
+ */
+function 显示控制台窗口(显示) {
+  if (显示 === false) {
+    if (状态.控制台窗口 && !状态.控制台窗口.isDestroyed()) 状态.控制台窗口.close();
+    return;
+  }
+
+  if (状态.控制台窗口 && !状态.控制台窗口.isDestroyed()) {
+    状态.控制台窗口.show();
+    状态.控制台窗口.focus();
+    return;
+  }
+
+  状态.控制台窗口 = new BrowserWindow({
+    width: 860,
+    height: 620,
+    minWidth: 560,
+    minHeight: 380,
+    title: 'Aoid ADB 控制台',
+    parent: 状态.窗口,
+    modal: false,
+    show: false,
+    backgroundColor: '#0d0e12',
+    autoHideMenuBar: true,
+    icon: path.join(根目录, 'resources', 'icon.png'),
+    webPreferences: {
+      preload: path.join(__dirname, '..', 'preload.js'),
+      contextIsolation: true,
+      nodeIntegration: false,
+      sandbox: false,
+    },
+  });
+
+  状态.控制台窗口.setMenuBarVisibility(false);
+  状态.控制台窗口.loadFile(path.join(根目录, 'src', 'renderer', 'console.html'));
+
+  /*
+   * 三重保险把窗口拿出来（ready-to-show 依赖首帧渲染，可能迟迟不触发）。
+   */
+  let 已显示 = false;
+  const 拿出来 = () => {
+    if (已显示 || !状态.控制台窗口 || 状态.控制台窗口.isDestroyed()) return;
+    已显示 = true;
+    状态.控制台窗口.show();
+  };
+
+  状态.控制台窗口.once('ready-to-show', 拿出来);
+  状态.控制台窗口.webContents.once('dom-ready', 拿出来);
+  setTimeout(拿出来, 1200);
+
+  状态.控制台窗口.on('closed', () => {
+    状态.控制台窗口 = null;
+  });
+}
+
 function 显示工具窗口(显示) {
   if (显示 === false) {
     if (状态.工具窗口 && !状态.工具窗口.isDestroyed()) 状态.工具窗口.close();
@@ -399,6 +738,14 @@ function 显示工具窗口(显示) {
   状态.工具窗口.webContents.once('dom-ready', 显示窗口);
   const 兜底 = setTimeout(显示窗口, 1500);
   状态.工具窗口.once('closed', () => clearTimeout(兜底));
+
+  // 渲染进程报错要记下来，否则"按钮点不动"时完全没线索
+  状态.工具窗口.webContents.on('console-message', (事件, 等级, 消息, 行, 源) => {
+    if (等级 >= 2) console.error('[工具窗口] ' + 源 + ':' + 行 + ' ' + 消息);
+  });
+  状态.工具窗口.webContents.on('preload-error', (事件, 路径, 错误) => {
+    console.error('[工具窗口] preload 出错:', 路径, 错误);
+  });
 
   状态.工具窗口.webContents.on('did-fail-load', (事件, 码, 描述) => {
     console.error('[工具窗口] 页面加载失败：', 码, 描述);

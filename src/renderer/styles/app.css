@@ -136,8 +136,10 @@ select {
   display: flex;
   flex-direction: column;
   height: 100vh;
+  position: relative;
   background: radial-gradient(120% 60% at 70% -10%, var(--强调-淡), transparent 60%), var(--底-0);
 }
+
 
 /* ---------- 标题栏 ---------- */
 .标题栏 {
@@ -227,6 +229,111 @@ select {
   display: grid;
   grid-template-columns: 268px minmax(0, 1fr) 288px;
   min-height: 0;
+}
+
+/* ---------- 沉浸模式 ----------
+ *
+ * 主窗口自己变形态：只留手机画面 + 悬浮的窗口控件。
+ * 没有第二个窗口，画面就是主窗口自己的 canvas，天然同步、零延迟。
+ *
+ * 关键：标题栏**不能 display:none** —— 最小化/最大化/关闭都在里面，
+ * 藏掉就会「关不掉窗口」（第 221 轮踩过）。这里改成悬浮细条。
+ */
+body.沉浸中 .侧栏,
+body.沉浸中 .状态栏,
+body.沉浸中 .品牌,
+body.沉浸中 .版本号,
+body.沉浸中 .标题栏拖拽区 {
+  display: none;
+}
+
+/* 标题栏悬浮在画面之上，平时很淡，鼠标移上去才显现 */
+body.沉浸中 .标题栏 {
+  position: absolute;
+  top: 0;
+  right: 0;
+  left: 0;
+  z-index: 30;
+  height: 28px;
+  padding: 0 4px;
+  background: linear-gradient(to bottom, rgba(0, 0, 0, 0.5), transparent);
+  border-bottom: none;
+  opacity: 0.2;
+  transition: opacity 0.18s var(--缓动), background 0.18s var(--缓动);
+}
+
+body.沉浸中 .标题栏:hover {
+  opacity: 1;
+  background: linear-gradient(to bottom, rgba(0, 0, 0, 0.78), rgba(0, 0, 0, 0.15));
+}
+
+body.沉浸中 .窗口按钮组 {
+  margin-left: auto;
+}
+
+body.沉浸中 .图标按钮 {
+  color: rgba(255, 255, 255, 0.85);
+  height: 24px;
+  width: 32px;
+}
+
+body.沉浸中 .图标按钮:hover {
+  background: rgba(255, 255, 255, 0.16);
+  color: #fff;
+}
+
+body.沉浸中 .图标按钮.关闭:hover {
+  background: #c42b1c;
+  color: #fff;
+}
+
+body.沉浸中 .按钮分隔 {
+  background: rgba(255, 255, 255, 0.18);
+  height: 11px;
+  margin: 0 3px;
+}
+
+/* 主体单列，只放画面 */
+body.沉浸中 .主体 {
+  grid-template-columns: minmax(0, 1fr);
+  flex: 1;
+  min-height: 0;
+}
+
+/* 舞台去内边距，画面贴边 */
+body.沉浸中 .舞台 {
+  padding: 0;
+  background: #000;
+  overflow: hidden;
+}
+
+body.沉浸中 .画面区 {
+  background: #000;
+}
+
+/* 手机壳退化为无外壳 */
+body.沉浸中 .手机壳 {
+  border-radius: 0;
+  padding: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+body.沉浸中 .画面 {
+  border-radius: 0;
+  background: #000;
+  /* 按比例缩放并居中，多余的留黑 —— 不拉伸 */
+  object-fit: contain;
+}
+
+/* 触控层要跟着画面走，不能盖住黑边区域 */
+body.沉浸中 .触控层 {
+  inset: 0;
+}
+
+/* 画面区要作为返回钮的定位参照 */
+.画面区 {
+  position: relative;
 }
 
 .侧栏 {
@@ -454,6 +561,46 @@ select {
   font-size: 11.5px;
   color: var(--字-次);
   line-height: 1.6;
+}
+
+/*
+ * 开源提示弹窗。
+ *
+ * 要点：
+ *   1. .对话框 本身没有 padding（那是给 .对话框头/.对话框底 那种分段结构设计的），
+ *      所以这里必须给内容容器自己补内边距，否则文字会贴着边框。
+ *   2. .主按钮 带 width:100%，直接放进来会撑满整行，
+ *      把「不再提示」挤到上一行。必须覆盖成 width:auto 再 flex 平分。
+ */
+.星提示内容 {
+  padding: 22px 22px 18px;
+}
+
+.星提示内容 h2 {
+  margin: 0 0 12px;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.星提示内容 p {
+  margin: 0;
+  font-size: 12.5px;
+  line-height: 1.85;
+  color: var(--字-次);
+}
+
+.星提示按钮行 {
+  display: flex;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.星提示按钮行 .次级按钮,
+.星提示按钮行 .主按钮 {
+  flex: 1 1 0;
+  width: auto;
+  text-align: center;
+  padding: 8px 12px;
 }
 
 .主按钮 {
@@ -1215,6 +1362,8 @@ select {
   z-index: 31;
   display: flex;
   flex-direction: column;
+  /* 内容由内部的 .抽屉体 各自滚动，抽屉本身不能溢出 */
+  overflow: hidden;
   animation: 抽屉入 0.22s var(--缓动);
 }
 
@@ -1263,6 +1412,9 @@ select {
   padding: 10px 8px;
   border-right: 1px solid var(--线-弱);
   background: var(--底-0);
+  /* 同样是 grid 子项，内容多时要自己滚，不能把抽屉撑高 */
+  min-height: 0;
+  overflow-y: auto;
 }
 
 .设置标签 {
@@ -1288,6 +1440,17 @@ select {
 .设置内容 {
   padding: 14px 16px;
   overflow-y: auto;
+  /*
+   * min-height: 0 必须有。
+   *
+   * 它是 CSS Grid 的子项，grid 默认 min-height 是 auto（= 内容高度），
+   * 于是内容多的时候它被撑到和内容一样高，压根不产生滚动条，
+   * 多出来的部分直接被抽屉裁掉 —— 表现就是「设置页滚不动」。
+   * 设成 0 才能让 overflow-y 真正生效。
+   */
+  min-height: 0;
+  /* 滚动容器自身也要能接收滚轮，避免被父层拦截 */
+  overscroll-behavior: contain;
 }
 
 .设置页[hidden] {
@@ -1301,6 +1464,18 @@ select {
   gap: 14px;
   padding: 11px 0;
   border-bottom: 1px solid var(--线-弱);
+}
+
+/*
+ * display:flex 会把 [hidden] 的 display:none 盖掉。
+ *
+ * CSS 特异性：类选择器 .设置项 比属性选择器 [hidden] 高一级，
+ * 所以只写 hidden 属性不生效，元素照样显示。
+ * 这里补一条同样特异性的规则把它压回去，
+ * .设置项[hidden] 比 .设置项 更具体，能正确隐藏。
+ */
+.设置项[hidden] {
+  display: none;
 }
 
 .设置项:last-child {
@@ -1346,6 +1521,33 @@ select {
 }
 
 /* 开关 */
+/* 充电中用橙色提示，替代原来的 ⚡ emoji */
+.指标.充电中 dd {
+  color: var(--强调);
+}
+
+/* 行数滑块（平滑滚动用） */
+.滑块组 {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: none;
+}
+
+.滑块组 input[type='range'] {
+  width: 140px;
+  accent-color: var(--强调);
+  cursor: pointer;
+}
+
+.滑块值 {
+  min-width: 24px;
+  text-align: right;
+  font-size: 12.5px;
+  color: var(--强调);
+  font-variant-numeric: tabular-nums;
+}
+
 .开关 {
   position: relative;
   width: 36px;
@@ -2216,8 +2418,10 @@ select {
   position: absolute;
   inset: 24px;
   border-radius: 22px;
-  border: 1px dashed var(--线);
-  background: radial-gradient(60% 40% at 50% 30%, var(--强调-淡), transparent 70%);
+  /* 原来是一圈虚线框，用户反馈「整个窗口有一层虚线」，
+     看着像选中框。改成只留柔和光晕，不抢注意力。 */
+  border: none;
+  background: radial-gradient(55% 45% at 50% 42%, var(--强调-淡), transparent 72%);
   pointer-events: none;
 }
 
@@ -2537,16 +2741,33 @@ select {
 }
 /* 输入法代理：不可见，但要能获得焦点让电脑输入法挂上来 */
 #输入法代理 {
+  /*
+   * 这是接收电脑输入法的隐形输入框。
+   *
+   * 三条硬性要求（违反任何一条，中文输入法都会打不出来）：
+   *   1. 必须在视口内 —— 移出屏幕外的元素 Chromium 不给挂 IME
+   *   2. 不能 opacity:0 / display:none / visibility:hidden
+   *   3. 不能有 aria-hidden="true"
+   *
+   * 所以这里用"极小尺寸 + 全透明"的方式隐藏：
+   * 视觉上一层像素都看不见，但它是个正常的、可聚焦的 input。
+   */
   position: fixed;
-  left: -9999px;
-  top: 0;
+  left: 50%;
+  top: 50%;
   width: 1px;
   height: 1px;
-  opacity: 0;
-  pointer-events: none;
-  overflow: hidden;
-  white-space: pre-wrap;
+  padding: 0;
+  margin: 0;
+  border: 0;
+  outline: none;
+  opacity: 0.01;
+  color: transparent;
+  background: transparent;
   caret-color: transparent;
+  font-size: 16px;
+  z-index: 1;
+  pointer-events: none;
 }
 
 /* ================================================================== */
@@ -2605,6 +2826,66 @@ select {
 
 .抽屉:not([hidden]) {
   animation: 抽屉滑入 0.2s var(--缓动) both;
+}
+
+/*
+ * 关闭动画。
+ *
+ * 之前所有浮层关闭都是直接 hidden = true，元素瞬间消失，
+ * 而打开时有滑入/浮起动画，一开一关不对称，看起来很生硬。
+ *
+ * 做法：关闭时不直接 hidden，先加 .关闭中 类跑退场动画，
+ * 等 animationend 后再真正 hidden（见 app.js 的 淡出后隐藏）。
+ * 这里用 !important 覆盖掉 :not([hidden]) 那条入场动画。
+ */
+.抽屉.关闭中 {
+  animation: 抽屉滑出 0.18s var(--缓动) both !important;
+}
+
+.对话框.关闭中,
+.文档对话框.关闭中 {
+  animation: 对话框沉下 0.16s var(--缓动) both !important;
+}
+
+.抽屉遮罩.关闭中,
+.对话框遮罩.关闭中 {
+  animation: 遮罩淡出 0.18s var(--缓动) both !important;
+}
+
+/* 文档抽屉是另一套类名，关闭时也同样处理 */
+.文档遮罩.关闭中 {
+  animation: 遮罩淡出 0.16s var(--缓动) both !important;
+}
+
+@keyframes 抽屉滑出 {
+  from {
+    transform: translateX(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateX(24px);
+    opacity: 0;
+  }
+}
+
+@keyframes 对话框沉下 {
+  from {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 1;
+  }
+  to {
+    transform: translate(-50%, calc(-50% + 10px)) scale(0.985);
+    opacity: 0;
+  }
+}
+
+@keyframes 遮罩淡出 {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
 }
 
 .对话框:not([hidden]) {

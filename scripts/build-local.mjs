@@ -30,6 +30,7 @@ const 本地release = path.join(本地根, 'release');
 const 复制清单 = [
   'src',
   'resources',
+  'build',
   'docs',
   'vendor',
   'scrcpy-runtime',

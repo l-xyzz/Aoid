@@ -1,0 +1,199 @@
+<!doctype html>
+<html lang="zh-CN" data-theme="dark">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; style-src-elem 'self' 'unsafe-inline'; connect-src 'self'"
+    />
+    <title>Aoid ADB 控制台</title>
+    <link rel="stylesheet" href="./styles/app.css" />
+    <style>
+      /*
+       * ADB 控制台独立窗口。
+       *
+       * 整页就是一个终端：上面输出、下面输入，没有任何侧栏标签页。
+       * 独立窗口的意义就是「常驻在旁边随时敲」，所以尽量把空间都给终端。
+       */
+      html,
+      body {
+        margin: 0;
+        padding: 0;
+        height: 100%;
+        overflow: hidden;
+        background: var(--底-0);
+        color: var(--字-主);
+        font: 13px/1.6 var(--字体-数字, Consolas, 'Cascadia Mono', monospace);
+      }
+
+      .控制台页 {
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+        box-sizing: border-box;
+        padding: 10px;
+        gap: 8px;
+      }
+
+      /* 顶部状态条：显示当前设备与命令计数 */
+      .控制台状态 {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 11.5px;
+        color: var(--字-弱);
+        flex: none;
+      }
+
+      .控制台状态 .点 {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: var(--字-弱);
+      }
+
+      .控制台状态 .点.在线 {
+        background: var(--绿, #4ade80);
+      }
+
+      .控制台状态 .清屏按钮 {
+        margin-left: auto;
+        border: 1px solid var(--线);
+        background: transparent;
+        color: var(--字-次);
+        border-radius: 6px;
+        padding: 3px 9px;
+        font-size: 11px;
+        cursor: pointer;
+      }
+
+      .控制台状态 .清屏按钮:hover {
+        background: var(--底-2);
+        color: var(--字-主);
+      }
+
+      /* 输出区 */
+      .控制台输出区 {
+        flex: 1;
+        min-height: 0;
+        overflow-y: auto;
+        padding: 10px 12px;
+        border-radius: 10px;
+        border: 1px solid var(--线-弱);
+        background: var(--底-1);
+        white-space: pre-wrap;
+        word-break: break-all;
+      }
+
+      .控制台输出区 > div {
+        margin: 1px 0;
+      }
+
+      /* 输入行 */
+      .控制台输入行 {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 12px;
+        border-radius: 10px;
+        border: 1px solid var(--线);
+        background: var(--底-1);
+        flex: none;
+      }
+
+      .控制台输入行 .提示符 {
+        color: var(--强调, #f5a524);
+        flex: none;
+      }
+
+      .控制台输入行 input {
+        flex: 1;
+        min-width: 0;
+        border: none;
+        outline: none;
+        background: transparent;
+        color: var(--字-主);
+        font: inherit;
+      }
+
+      /* 补全下拉：浮在输入框上方 */
+      .补全框 {
+        position: fixed;
+        z-index: 50;
+        min-width: 200px;
+        max-height: 220px;
+        overflow-y: auto;
+        padding: 4px;
+        border-radius: 8px;
+        background: var(--底-2);
+        border: 1px solid var(--线);
+        box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.7);
+      }
+
+      .补全框[hidden] {
+        display: none;
+      }
+
+      .补全项 {
+        padding: 4px 9px;
+        border-radius: 5px;
+        font-size: 12px;
+        color: var(--字-次);
+        cursor: pointer;
+        white-space: nowrap;
+      }
+
+      .补全项:hover,
+      .补全项.选中 {
+        background: var(--强调-淡);
+        color: var(--强调, #f5a524);
+      }
+
+      /* 语义色 */
+      .高亮-命令 {
+        color: var(--强调, #f5a524);
+      }
+      .高亮-参数 {
+        color: #7dd3fc;
+      }
+      .高亮-路径 {
+        color: #86efac;
+      }
+      .高亮-字符串 {
+        color: #fca5a5;
+      }
+      .高亮-提示 {
+        color: var(--字-弱);
+      }
+      .高亮-错误 {
+        color: #ff9aa2;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="控制台页">
+      <div class="控制台状态">
+        <span class="点" id="连接点"></span>
+        <span id="设备文字">未连接设备</span>
+        <span id="命令计数"></span>
+        <button class="清屏按钮" id="清屏">清屏 Ctrl+L</button>
+      </div>
+
+      <div class="控制台输出区" id="控制台输出"></div>
+
+      <div class="控制台输入行">
+        <span class="提示符">$</span>
+        <input
+          id="控制台输入"
+          placeholder="输入 adb shell 命令，Tab 补全，回车执行"
+          autocomplete="off"
+          spellcheck="false"
+        />
+      </div>
+    </div>
+
+    <div class="补全框" id="补全框" hidden></div>
+
+    <script type="module" src="./js/console.js"></script>
+  </body>
+</html>

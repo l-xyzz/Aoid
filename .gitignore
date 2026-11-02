@@ -26,16 +26,21 @@ _data/
 _*.mjs
 _*.cjs
 _*.js
+_*.py
+_*.txt
 
 # 宣传素材与生成脚本（本地用，不进仓库）
 _shot/
 _cards/
 _gen_*.py
+_mambo/
+_video/
 __pycache__/
 *.pyc
 
 # 参考软件解包产生的临时目录
 _ref/
+esc_src/
 
 # 系统与编辑器
 .DS_Store

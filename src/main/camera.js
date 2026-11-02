@@ -29,6 +29,10 @@ class 摄像头服务 {
     /** 试开失败的镜头（列得出来但第三方用不了） */
     this.不可用清单 = new Map();
     this.最近日志 = '';
+    /** 后台试开筛选进行中 */
+    this.筛选中 = false;
+    /** 置 true 让筛选在下一轮循环前退出 */
+    this.筛选已中止 = false;
   }
 
   可执行文件() {
@@ -99,14 +103,33 @@ class 摄像头服务 {
 
   /** 后台逐个试开，把打不开的镜头剔掉 */
   async #后台筛选(序列号, 全部, 可用后回调) {
+    this.筛选中 = true;
     const 可用 = [];
     for (const 项 of 全部) {
+      /*
+       * 用户已经手动打开摄像头时立刻中止筛选。
+       *
+       * 试开每个镜头要 4.5 秒，5 个镜头就是 22 秒，这期间摄像头
+       * 一直被试开进程占着。用户在此时点「打开摄像头」，
+       * 新进程抢不到摄像头，日志就报 "Camera disconnected" 并退出 ——
+       * 表现是「摄像头打不开」。所以打开前必须让筛选让路。
+       */
+      if (this.筛选已中止) break;
       const 能开 = await this.#试开(序列号, 项.id);
+      if (this.筛选已中止) break;
       if (能开) {
         可用.push({ ...项, 待检测: false });
       } else {
         this.不可用清单.set(项.id, true);
       }
+    }
+    this.筛选中 = false;
+
+    // 被中止时保留原列表，不要把没试完的镜头当成不可用
+    if (this.筛选已中止) {
+      this.筛选已中止 = false;
+      this.列表进行中 = null;
+      return;
     }
 
     // 一个都开不了就别把列表清空（可能是别的问题），全部保留
@@ -172,8 +195,25 @@ class 摄像头服务 {
    * @param {number} 选项.帧率
    * @param {boolean} 选项.要麦克风 是否同时把手机麦克风接到电脑
    */
-  打开(选项) {
+  async 打开(选项) {
+    /*
+     * 先中止后台试开筛选并等它真正收手。
+     *
+     * 试开进程会占着摄像头，不把它停掉新进程就抢不到，
+     * scrcpy 会报 "Camera disconnected" 直接退出。
+     * 这里最多等 5 秒（一次试开的时长），超时也继续往下走。
+     */
+    if (this.筛选中) {
+      this.筛选已中止 = true;
+      const 起始 = Date.now();
+      while (this.筛选中 && Date.now() - 起始 < 5000) {
+        await new Promise((解析) => setTimeout(解析, 100));
+      }
+    }
+
     this.关闭摄像头();
+    // 给系统一点时间释放摄像头句柄，抢得太快会拿到 busy
+    await new Promise((解析) => setTimeout(解析, 350));
 
     const 参数 = [
       '-s', 选项.序列号,
@@ -190,7 +230,11 @@ class 摄像头服务 {
       '--window-width=960',
       '--window-height=540',
       '--no-clipboard-autosync',
-      '--no-power-on',
+      /*
+       * 不加 --no-power-on：摄像头需要屏幕亮着，熄屏就 Camera disconnected。
+       * 也不能加 --stay-awake：它要求 control 开启，而摄像头模式必须 --no-control，
+       * 否则 scrcpy 报 "Cannot request to stay awake if control is disabled" 并退出。
+       */
     ];
 
     // 音频：官方文档明确「--video-source=camera 会自动把音频源切到 mic」，
@@ -200,7 +244,7 @@ class 摄像头服务 {
       参数.push('--no-audio');
     }
 
-    return this.#启动('摄像头', 参数);
+    return await this.#启动('摄像头', 参数);
   }
 
   /** 只开麦克风（电脑端当麦克风用；window 显示电平） */
@@ -237,15 +281,43 @@ class 摄像头服务 {
     子进程.stdout.on('data', 收集);
     子进程.stderr.on('data', 收集);
 
-    子进程.on('close', () => {
+    子进程.on('close', (码) => {
       if (类型 === '摄像头') this.摄像头进程 = null;
       else this.麦克风进程 = null;
+
+      // 退出时把日志落盘，便于排查「打开就关」的真实原因
+      try {
+        const os = require('node:os');
+        const 日志路径 = path.join(os.tmpdir(), 'aoid-scrcpy-exit.log');
+        const 头部 = '[' + new Date().toISOString() + '] ' + 类型 + ' 退出码=' + 码 + '\n';
+        fs.appendFileSync(日志路径, 头部 + this.最近日志 + '\n---\n', 'utf8');
+      } catch {}
     });
 
     if (类型 === '摄像头') this.摄像头进程 = 子进程;
     else this.麦克风进程 = 子进程;
 
-    return { ok: true, pid: 子进程.pid };
+    /*
+     * 判定「是否真的起来了」。
+     *
+     * 之前立刻返回 ok:true，可 scrcpy 可能起来就退（摄像头被占用、
+     * 参数不支持、server 连不上等），界面照样显示「已打开」，
+     * 用户看到的就是「打开一秒就关」。
+     * 这里等 900ms 看进程是否还活着，死了把日志带回去。
+     */
+    return new Promise((解析) => {
+      let 已退出 = false;
+      子进程.once('close', () => {
+        已退出 = true;
+      });
+      setTimeout(() => {
+        if (已退出) {
+          解析({ ok: false, 原因: '摄像头启动后立即退出', 日志: this.最近日志.slice(-600) });
+        } else {
+          解析({ ok: true, pid: 子进程.pid });
+        }
+      }, 900);
+    });
   }
 
   /** 关闭摄像头进程 */

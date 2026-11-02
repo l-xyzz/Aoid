@@ -103,7 +103,7 @@ process.on('unhandledRejection', (错误) => {
   记录启动错误('unhandledRejection', 错误);
 });
 
-  app.whenReady().then(初始化);
+app.whenReady().then(初始化);
 }
 
 /** 把主窗口显示出来并聚焦（可能还没创建，就等它创建） */
@@ -228,11 +228,192 @@ function 构建菜单() {
 }
 
 /* ------------------------------------------------------------------ */
+/* 窗口类 IPC                                                          */
+/* ------------------------------------------------------------------ */
+
+/**
+ * 注册窗口控制相关的 IPC。
+ *
+ * 单独抽成函数、并在初始化流程最前面调用，原因：
+ *
+ *   之前这些 handle 混在 初始化() 中段，前面任何一步抛错
+ *   （某个模块构造失败、require 报错等）就会导致后面全部不执行，
+ *   界面看到的是「No handler registered for 窗口:打开沉浸」，
+ *   真正的原因被吞掉了，极难排查。
+ *
+ *   现在无论后面发生什么，窗口控制一定可用。
+ */
+function 注册窗口接口() {
+  const { ipcMain, BrowserWindow } = require('electron');
+
+  ipcMain.handle('窗口:最小化', () => {
+    try { 状态.窗口?.minimize(); } catch {}
+    return true;
+  });
+
+  ipcMain.handle('窗口:最大化', () => {
+    try {
+      if (状态.窗口) {
+        if (状态.窗口.isMaximized()) 状态.窗口.unmaximize();
+        else 状态.窗口.maximize();
+      }
+    } catch {}
+    return true;
+  });
+
+  ipcMain.handle('窗口:关闭', () => {
+    try { 状态.窗口?.close(); } catch {}
+    return true;
+  });
+
+  ipcMain.handle('窗口:是否最大化', () => {
+    try { return Boolean(状态.窗口 && 状态.窗口.isMaximized()); } catch { return false; }
+  });
+
+  /**
+   * 渲染进程错误落盘。
+   *
+   * 排查「点击/拖动全失灵」这类问题时，CDP 经常不可用（连接卡 CloseWait），
+   * 界面上也看不到异常。这条通道把渲染进程的错误写到
+   * %TEMP%\aoid-render-errors.log，直接读文件就能定位。
+   */
+  ipcMain.handle('日志:渲染错误', (事件, 选项) => {
+    try {
+      const 列表 = (选项 && 选项.列表) || [];
+      if (!Array.isArray(列表) || 列表.length === 0) return { ok: true };
+      const os = require('node:os');
+      const 路径 = path.join(os.tmpdir(), 'aoid-render-errors.log');
+      const 内容 =
+        '[' + new Date().toISOString() + ']\n' + 列表.map((x) => '  ' + x).join('\n') + '\n\n';
+      fs.appendFileSync(路径, 内容, 'utf8');
+      return { ok: true, 路径 };
+    } catch {
+      return { ok: false };
+    }
+  });
+
+  /* ---------------- 沉浸模式（主窗口自身变形态） ---------------- */
+
+  /**
+   * 进入 / 退出沉浸模式。
+   *
+   * **不再创建第二个窗口。** 之前试过独立窗口 + capturePage 镜像、
+   * 独立窗口 + 重新解码，都要么黑屏要么等待很久，根因是第二个窗口
+   * 拿不到主窗口已经解好的画面。
+   *
+   * 现在直接让主窗口自己变形态：
+   *   - 渲染进程切 body.沉浸中（隐藏侧栏、状态栏，保留悬浮标题栏）
+   *   - 主进程把窗口缩到手机比例，允许自由缩放
+   *   - 画面就是主窗口自己的 canvas，天然同步、零延迟、操作天然可用
+   *
+   * 关闭时还原原来的窗口尺寸与位置。
+   */
+  ipcMain.handle('窗口:沉浸模式', (事件, 选项) => {
+    const 窗 = 状态.窗口;
+    if (!窗 || 窗.isDestroyed()) return { ok: false };
+    const 参数 = 选项 || {};
+
+    if (参数.开启 === true) {
+      // 记录进入前的状态，退出时还原
+      if (!状态.沉浸前尺寸) {
+        状态.沉浸前尺寸 = {
+          最大化: 窗.isMaximized(),
+          边界: 窗.getBounds(),
+        };
+      }
+      if (窗.isMaximized()) 窗.unmaximize();
+
+      const 比例 = Number(参数.宽高比) || 1280 / 590; // 高 / 宽
+      const 屏高 = Number(参数.限高) || 900;
+      const 屏宽 = Number(参数.限宽) || 1200;
+
+      // 顶栏在沉浸模式下是悬浮的，不占布局高度，所以窗口高 = 画面高
+      let 高 = Math.max(320, Math.round(屏高));
+      let 宽 = Math.round(高 / 比例);
+      if (宽 > 屏宽) {
+        宽 = Math.max(180, Math.round(屏宽));
+        高 = Math.round(宽 * 比例);
+      }
+
+      窗.setResizable(true);
+      窗.setMinimumSize(160, 240);
+      窗.setContentSize(宽, 高, false);
+      窗.center();
+
+      /*
+       * 通知渲染进程切布局。
+       * 必须显式发一条，而不是靠渲染进程自己判断 ——
+       * 尺寸变化事件在渲染进程里分不清「用户拖窗口」和「进入沉浸」。
+       */
+      窗.webContents.send('窗口:沉浸已切换', { 开启: true, 宽, 高 });
+      return { ok: true, 宽, 高 };
+    }
+
+    // 退出沉浸：还原窗口
+    const 旧 = 状态.沉浸前尺寸;
+    状态.沉浸前尺寸 = null;
+    窗.setMinimumSize(900, 600);
+    if (旧 && 旧.边界) {
+      窗.setBounds(旧.边界, false);
+      if (旧.最大化) 窗.maximize();
+    }
+    窗.webContents.send('窗口:沉浸已切换', { 开启: false });
+    return { ok: true };
+  });
+
+  /** 兼容旧接口：关闭沉浸 = 退出沉浸模式 */
+  ipcMain.handle('窗口:关闭沉浸', () => {
+    const 窗 = 状态.窗口;
+    if (!窗 || 窗.isDestroyed()) return { ok: true };
+    const 旧 = 状态.沉浸前尺寸;
+    状态.沉浸前尺寸 = null;
+    窗.setMinimumSize(900, 600);
+    if (旧 && 旧.边界) {
+      窗.setBounds(旧.边界, false);
+      if (旧.最大化) 窗.maximize();
+    }
+    窗.webContents.send('窗口:沉浸已切换', { 开启: false });
+    return { ok: true };
+  });
+
+  /*
+   * 注意：不再有 窗口:沉浸校正 / 窗口:沉浸控制 这两个 IPC。
+   *
+   * 沉浸模式现在是主窗口自己变形态，缩放窗口就是缩放主窗口，
+   * 画面由渲染进程按窗口尺寸自动适配，不需要主进程去校正比例，
+   * 也没有「另一个窗口」需要最小化/最大化/关闭。
+   */
+}
+
+/* ------------------------------------------------------------------ */
 /* 初始化                                                              */
 /* ------------------------------------------------------------------ */
 
 async function 初始化() {
+  // 窗口类 IPC 最先注册：即使后面某个模块初始化失败，
+  // 用户至少还能关窗口、能开沉浸，不会因为一个异常全废。
+  注册窗口接口();
+
   状态.设置 = new 设置存储(数据目录());
+
+  /*
+   * 启动计数。
+   *
+   * 必须放在 状态.设置 创建之后 —— 之前放在 whenReady 外层，
+   * 那时 状态.设置 还是 null，计数永远是 0。
+   *
+   * 第 3 次启动时弹一次开源项目提示：让用户先真正用过两次再开口，
+   * 一上来就求 Star 会让人反感。弹过就打个标记，之后不再打扰。
+   */
+  try {
+    const 次数 = (Number(状态.设置.数据?.启动次数) || 0) + 1;
+    状态.设置.更新({ 启动次数: 次数 });
+    if (次数 === 3 && 状态.设置.数据?.已提示开源 !== true) {
+      状态.该提示开源 = true;
+    }
+  } catch {
+    // 计数失败不影响启动
+  }
   状态.adb = new Adb({
     toolDir: 内置工具目录(),
     dataDir: path.join(数据目录(), 'adb'),
@@ -271,20 +452,6 @@ async function 初始化() {
     状态.窗口?.webContents.send('启动:就绪', true);
   });
 
-   // 窗口控制：用 handle 而非 on——preload 里是 ipcRenderer.invoke，
-  // invoke 需要 handle 才能正确 resolve，用 on 会让 Promise 永远挂起。
-  const { ipcMain } = require('electron');
-  ipcMain.handle('窗口:最小化', () => { 状态.窗口?.minimize(); return true; });
-  ipcMain.handle('窗口:最大化', () => {
-    if (状态.窗口) {
-      if (状态.窗口.isMaximized()) 状态.窗口.unmaximize();
-      else 状态.窗口.maximize();
-    }
-    return true;
-  });
-  ipcMain.handle('窗口:关闭', () => { 状态.窗口?.close(); return true; });
-  ipcMain.handle('窗口:是否最大化', () => Boolean(状态.窗口 && 状态.窗口.isMaximized()));
-
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) 创建窗口();
   });
@@ -310,8 +477,33 @@ app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') app.quit();
 });
 
+/*
+ * 退出前彻底释放所有资源。
+ *
+ * 之前只停了音频/摄像头/麦克风，没管投屏通道和 adb 转发。
+ * 结果安装新版本时，NSIS 要覆盖 Aoid.exe，而残留的进程与文件句柄
+ * 让它写不进去 —— 用户看到的就是「进度条一直闪、提示无法关闭、
+ * 点取消直接退出、点重试才能装成功」。
+ */
+/*
+ * 退出前清理资源。
+ *
+ * 之前的写法是 preventDefault + 异步清理 + app.exit(0)，
+ * 这套组合很脆弱：一旦 preventDefault 生效而 app.exit 没走到
+ * （异步清理里某一步卡住、Promise 链断掉），窗口就再也关不掉，
+ * 用户只能去任务管理器强杀。
+ *
+ * 改成最简单可靠的同步清理：
+ *   - before-quit 里同步关掉摄像头/麦克风/音频的子进程
+ *   - 不 preventDefault，让 Electron 走正常退出流程
+ *
+ * 同步 kill 子进程不会阻塞（kill 是异步信号，立即返回），
+ * 所以这里不需要 async。
+ */
 app.on('before-quit', () => {
-  状态.音频?.停止();
-  状态.摄像头?.关闭();
-  状态.麦克风?.停止();
+  try { 状态.沉浸窗口?.destroy?.(); } catch {}
+  try { 状态.音频?.停止(); } catch {}
+  try { 状态.摄像头?.关闭(); } catch {}
+  try { 状态.麦克风?.停止(); } catch {}
+  try { 状态.虚拟摄像头?.关闭?.(); } catch {}
 });

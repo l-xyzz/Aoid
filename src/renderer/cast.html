@@ -1,0 +1,148 @@
+<!doctype html>
+<html lang="zh-CN" data-theme="dark">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; style-src-elem 'self' 'unsafe-inline'; img-src 'self' data: blob:; media-src 'self' blob:"
+    />
+    <title>Aoid 投屏</title>
+    <style>
+      /*
+       * 单设备独立投屏窗口。
+       *
+       * 只放画面 + 一个极简的悬浮工具条，窗口比例就是手机比例。
+       * 关掉窗口即断开这台设备（主进程负责）。
+       */
+      html,
+      body {
+        margin: 0;
+        padding: 0;
+        height: 100%;
+        overflow: hidden;
+        background: #000;
+        color: #fff;
+        font: 12px/1.6 system-ui, 'Segoe UI', 'Microsoft YaHei', sans-serif;
+      }
+
+      .舞台 {
+        position: relative;
+        width: 100%;
+        height: 100%;
+        display: grid;
+        place-items: center;
+        background: #000;
+      }
+
+      /* 画布：按手机比例缩放居中，多余留黑 */
+      #画布 {
+        display: block;
+        background: #000;
+      }
+
+      /* 触控层：盖在画布上接收鼠标/触屏 */
+      .触控层 {
+        position: absolute;
+        cursor: grab;
+        touch-action: none;
+      }
+
+      .触控层.按下中 {
+        cursor: grabbing;
+      }
+
+      /* 悬浮工具条：平时几乎透明，鼠标移上去才显现 */
+      .工具条 {
+        position: absolute;
+        top: 0;
+        right: 0;
+        left: 0;
+        height: 30px;
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+        gap: 4px;
+        padding: 0 6px;
+        box-sizing: border-box;
+        background: linear-gradient(to bottom, rgba(0, 0, 0, 0.6), transparent);
+        opacity: 0.2;
+        transition: opacity 0.18s;
+        z-index: 10;
+        -webkit-app-region: drag;
+      }
+
+      .工具条:hover {
+        opacity: 1;
+      }
+
+      .工具条按钮 {
+        -webkit-app-region: no-drag;
+        width: 30px;
+        height: 24px;
+        display: grid;
+        place-items: center;
+        border: none;
+        border-radius: 6px;
+        background: transparent;
+        color: rgba(255, 255, 255, 0.85);
+        cursor: pointer;
+        font-size: 13px;
+      }
+
+      .工具条按钮:hover {
+        background: rgba(255, 255, 255, 0.16);
+        color: #fff;
+      }
+
+      .工具条按钮.关闭:hover {
+        background: #c42b1c;
+        color: #fff;
+      }
+
+      .工具条 .设备名 {
+        margin-right: auto;
+        font-size: 11px;
+        color: rgba(255, 255, 255, 0.7);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 60%;
+      }
+
+      /* 等待提示 */
+      .空态 {
+        position: absolute;
+        inset: 0;
+        display: grid;
+        place-items: center;
+        color: rgba(255, 255, 255, 0.45);
+        font-size: 13px;
+        text-align: center;
+        pointer-events: none;
+      }
+
+      /* display:grid 会盖掉 [hidden] 的 display:none，必须显式压回去 */
+      .空态[hidden] {
+        display: none;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="舞台" id="舞台">
+      <canvas id="画布" width="590" height="1280"></canvas>
+      <div class="触控层" id="触控层"></div>
+
+      <div class="空态" id="空态">正在连接…</div>
+
+      <div class="工具条">
+        <span class="设备名" id="设备名"></span>
+        <button class="工具条按钮" id="旋转" title="旋转屏幕">⟳</button>
+        <button class="工具条按钮" id="主页" title="回到主页">⌂</button>
+        <button class="工具条按钮" id="最小化" title="最小化">─</button>
+        <button class="工具条按钮 关闭" id="关闭" title="关闭并断开">✕</button>
+      </div>
+    </div>
+
+    <script type="module" src="./js/cast.js"></script>
+  </body>
+</html>

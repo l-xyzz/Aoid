@@ -146,7 +146,7 @@ function 启动(应用目录) {
     throw new Error('找不到 electron.exe，请先运行 npm install');
   }
 
-  const 子进程 = spawn(可执行文件, [应用目录], {
+  const 子进程 = spawn(可执行文件, [应用目录, '--remote-debugging-port=9444'], {
     cwd: 应用目录,
     env: 构造环境(),
     detached: true,

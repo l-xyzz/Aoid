@@ -108,7 +108,7 @@ export class 播放器 {
    * @param {(尺寸: {宽: number, 高: number}) => void} [回调.尺寸]
    * @param {(信息: object) => void} [回调.统计] 每秒回调一次
    */
-  constructor(画布, { 就绪, 尺寸, 统计 } = {}) {
+  constructor(画布, { 就绪, 尺寸, 统计, 帧 } = {}) {
     this.画布 = 画布;
     // 只保留 alpha:false（省一次合成）。
     // 不加 desynchronized：部分 GPU 配置下它会返回 null，导致后续全部崩掉。
@@ -121,6 +121,7 @@ export class 播放器 {
     this.回调就绪 = 就绪 || (() => {});
     this.回调尺寸 = 尺寸 || (() => {});
     this.回调统计 = 统计 || (() => {});
+    this.回调帧 = 帧 || null;
 
     this.解码器 = null;
     this.sps = null;
@@ -399,7 +400,16 @@ export class 播放器 {
         this.画布.height = 帧.displayHeight;
         this.宽 = 帧.displayWidth;
         this.高 = 帧.displayHeight;
-        检测并通知尺寸();
+        /*
+         * 必须写成 this.检测并通知尺寸()。
+         *
+         * 之前漏了 this.，变成了调用全局函数 —— 而全局根本没有这个函数，
+         * 于是每输出一帧就抛一次 ReferenceError。
+         * 画布尺寸变化时才触发（首次收到帧、横竖屏切换），
+         * 但异常发生在解码输出回调里，会污染整个渲染进程：
+         * 表现为触控、键盘、打字全部失灵，界面看起来像"卡死"。
+         */
+        this.检测并通知尺寸();
       }
       this.上下文.drawImage(帧, 0, 0, this.画布.width, this.画布.height);
       this.最近帧时间.push(performance.now());
@@ -409,6 +419,25 @@ export class 播放器 {
       if (!this.就绪) {
         this.就绪 = true;
         this.回调就绪();
+      }
+
+      /*
+       * 帧回调：把刚画好的这一帧交给外部（沉浸窗口）。
+       *
+       * 用 transferToImageBitmap 把画布内容转成 ImageBitmap，
+       * 它是可结构化克隆、可跨进程传输的，沉浸窗口拿到后直接
+       * drawImage 即可，**不需要重新解码**。
+       *
+       * 这是沉浸模式「直接从主应用获取画面」的关键：主窗口解码一次，
+       * 沉浸窗口共享结果，彻底解决之前「等待太久」「要重新解码」的问题。
+       */
+      if (this.回调帧) {
+        try {
+          const 位图 = this.画布.transferToImageBitmap();
+          this.回调帧(位图);
+        } catch {
+          // transferToImageBitmap 偶发失败（画布被占用），丢这一帧即可
+        }
       }
     } finally {
       帧.close();

@@ -20,6 +20,11 @@ contextBridge.exposeInMainWorld('deck', {
   应用信息: () => ipcRenderer.invoke('应用:信息'),
   打开链接: (url) => ipcRenderer.invoke('系统:打开链接', { url }),
 
+  /* ---- 日志（渲染进程错误落盘，便于无 CDP 时排查） ---- */
+  日志: {
+    渲染错误: (列表) => ipcRenderer.invoke('日志:渲染错误', { 列表 }),
+  },
+
   /* ---- 多语言 ---- */
   语言: {
     列表: () => ipcRenderer.invoke('语言:列表'),
@@ -43,6 +48,16 @@ contextBridge.exposeInMainWorld('deck', {
     刷新分辨率: () => ipcRenderer.invoke('设备:刷新分辨率'),
     历史: () => ipcRenderer.invoke('设备:历史'),
     删除历史: (序列号) => ipcRenderer.invoke('设备:删除历史', { 序列号 }),
+    /** 重命名设备（只改显示名） */
+    重命名: (序列号, 名称) => ipcRenderer.invoke('设备:重命名', { 序列号, 名称 }),
+    /** 设备详情（型号/系统/分辨率/电量） */
+    详情: (序列号) => ipcRenderer.invoke('设备:详情', { 序列号 }),
+    /** 打开独立的设备管理窗口 */
+    显示详情窗口: () => ipcRenderer.invoke('设备:显示窗口', { 显示: true }),
+    /** 打开某个设备的独立投屏窗口（关闭窗口即断开该设备） */
+    打开投屏窗口: (选项) => ipcRenderer.invoke('设备:打开投屏窗口', 选项),
+    /** 投屏窗口按手机比例校正自身高度 */
+    投屏校正: (选项) => ipcRenderer.invoke('设备:投屏校正', 选项),
     刷新: () => ipcRenderer.invoke('设备:刷新'),
     状态: (回调) => 订阅('设备:状态', 回调),
     按键: (key) => ipcRenderer.invoke('设备:按键', { key }),
@@ -68,10 +83,16 @@ contextBridge.exposeInMainWorld('deck', {
     片段: (回调) => 订阅('画面:片段', 回调),
     会话: (回调) => 订阅('画面:会话', 回调),
     分辨率: (回调) => 订阅('画面:分辨率', 回调),
+    帧: (回调) => 订阅('画面:帧', 回调),
 
     /** 回报已消费到的帧号，主进程据此做背压丢帧（低频，走主 IPC 即可） */
     回报消费(帧号) {
       ipcRenderer.send('画面:回报消费', 帧号);
+    },
+
+    /** 把主窗口解码好的 ImageBitmap 送给沉浸窗口 */
+    送帧(位图) {
+      ipcRenderer.send('画面:送帧', 位图);
     },
   },
 
@@ -126,6 +147,12 @@ contextBridge.exposeInMainWorld('deck', {
   /* ---- 更多功能工具 ---- */
   工具: {
     显示窗口: () => ipcRenderer.invoke('工具:显示窗口', { 显示: true }),
+  /** 打开发独立的 ADB 控制台窗口 */
+  显示控制台: () => ipcRenderer.invoke('工具:显示控制台', { 显示: true }),
+
+  /** 拖动期间跟踪全局鼠标（鼠标甩出窗口也能继续拖） */
+  跟踪鼠标: (开启) => ipcRenderer.invoke('工具:跟踪鼠标', { 开启 }),
+  鼠标位置: (回调) => 订阅('工具:鼠标位置', 回调),
     选择apk: () => ipcRenderer.invoke('工具:选择apk'),
     应用列表: () => ipcRenderer.invoke('工具:应用列表'),
     启动应用: (包名) => ipcRenderer.invoke('工具:启动应用', { 包名 }),
@@ -142,6 +169,14 @@ contextBridge.exposeInMainWorld('deck', {
     盘符列表: () => ipcRenderer.invoke('工具:盘符列表'),
     执行命令: (命令) => ipcRenderer.invoke('工具:执行命令', { 命令 }),
     补全表: () => ipcRenderer.invoke('工具:补全表'),
+    电脑打开: (路径) => ipcRenderer.invoke('工具:电脑打开', { 路径 }),
+    电脑重命名: (路径, 新名) => ipcRenderer.invoke('工具:电脑重命名', { 路径, 新名 }),
+    电脑移动: (源, 目标目录) => ipcRenderer.invoke('工具:电脑移动', { 源, 目标目录 }),
+    电脑复制: (源, 目标目录) => ipcRenderer.invoke('工具:电脑复制', { 源, 目标目录 }),
+    电脑删除: (路径) => ipcRenderer.invoke('工具:电脑删除', { 路径 }),
+    手机重命名: (路径, 新名) => ipcRenderer.invoke('工具:手机重命名', { 路径, 新名 }),
+    手机移动: (源, 目标目录) => ipcRenderer.invoke('工具:手机移动', { 源, 目标目录 }),
+    手机复制: (源, 目标目录) => ipcRenderer.invoke('工具:手机复制', { 源, 目标目录 }),
   },
 
   /* ---- 输入法直连 ---- */
@@ -187,6 +222,7 @@ contextBridge.exposeInMainWorld('deck', {
     保存: (片段) => ipcRenderer.invoke('设置:保存', 片段),
     切换清晰度: (流分辨率) => ipcRenderer.invoke('设置:切换清晰度', { 流分辨率 }),
     重置快捷键: () => ipcRenderer.invoke('设置:重置快捷键'),
+    开源提示: () => ipcRenderer.invoke('设置:开源提示'),
     动作表: () => ipcRenderer.invoke('设置:动作表'),
     文档: (名称) => ipcRenderer.invoke('设置:文档', { 名称 }),
     检查更新: () => ipcRenderer.invoke('设置:检查更新'),
@@ -210,6 +246,12 @@ contextBridge.exposeInMainWorld('deck', {
     最小化: () => ipcRenderer.invoke('窗口:最小化'),
     最大化: () => ipcRenderer.invoke('窗口:最大化'),
     关闭: () => ipcRenderer.invoke('窗口:关闭'),
+    是否最大化: () => ipcRenderer.invoke('窗口:是否最大化'),
+    /** 进入 / 退出沉浸模式（主窗口自己变形态，不是第二个窗口） */
+    沉浸模式: (选项) => ipcRenderer.invoke('窗口:沉浸模式', 选项),
+    关闭沉浸: () => ipcRenderer.invoke('窗口:关闭沉浸'),
+    /** 主进程完成窗口尺寸调整后通知渲染进程切布局 */
+    沉浸已切换: (回调) => 订阅('窗口:沉浸已切换', 回调),
     最大化变化: (回调) => 订阅('窗口:最大化', 回调),
   },
 });

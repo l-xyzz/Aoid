@@ -1,0 +1,310 @@
+<!doctype html>
+<html lang="zh-CN" data-theme="dark">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; style-src-elem 'self' 'unsafe-inline'; img-src 'self' data: blob:"
+    />
+    <title>Aoid 设备管理</title>
+    <link rel="stylesheet" href="./styles/app.css" />
+    <style>
+      /*
+       * 设备管理独立窗口。
+       *
+       * 布局：顶部工具条（全部重连）+ 在线列表 + 离线列表。
+       * 每个设备一行，右侧一个「操作」下拉，包含重命名/重连/删除/详情。
+       */
+      html,
+      body {
+        margin: 0;
+        padding: 0;
+        height: 100%;
+        overflow: hidden;
+        background: var(--底-0);
+        color: var(--字-主);
+        font: 13px/1.6 system-ui, 'Segoe UI', 'Microsoft YaHei', sans-serif;
+      }
+
+      .设备页 {
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+        box-sizing: border-box;
+        padding: 14px;
+        gap: 12px;
+      }
+
+      /* 顶部工具条 */
+      .顶部条 {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex: none;
+      }
+
+      .顶部条 h1 {
+        margin: 0;
+        font-size: 15px;
+        font-weight: 600;
+      }
+
+      .顶部条 .统计 {
+        font-size: 11.5px;
+        color: var(--字-弱);
+      }
+
+      .顶部条 .右 {
+        margin-left: auto;
+        display: flex;
+        gap: 8px;
+      }
+
+      .按钮 {
+        border: 1px solid var(--线);
+        background: transparent;
+        color: var(--字-次);
+        border-radius: 8px;
+        padding: 6px 14px;
+        font-size: 12px;
+        cursor: pointer;
+        transition: background 0.14s, color 0.14s, border-color 0.14s;
+      }
+
+      .按钮:hover {
+        background: var(--底-2);
+        color: var(--字-主);
+      }
+
+      .按钮.主 {
+        background: var(--强调, #f5a524);
+        border-color: var(--强调, #f5a524);
+        color: #1a1205;
+        font-weight: 500;
+      }
+
+      .按钮.主:hover {
+        filter: brightness(1.08);
+      }
+
+      .按钮:disabled {
+        opacity: 0.45;
+        cursor: default;
+      }
+
+      /* 列表容器：在线/离线两块，各自可滚动 */
+      .列表区 {
+        flex: 1;
+        min-height: 0;
+        overflow-y: auto;
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+      }
+
+      .分组标题 {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 11.5px;
+        color: var(--字-弱);
+        margin-bottom: 6px;
+      }
+
+      .分组标题 .数量 {
+        padding: 1px 7px;
+        border-radius: 999px;
+        background: var(--底-2);
+        font-size: 10.5px;
+      }
+
+      /* 单个设备行 */
+      .设备行 {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 10px 12px;
+        border-radius: 10px;
+        border: 1px solid var(--线-弱);
+        background: var(--底-1);
+        transition: border-color 0.14s, background 0.14s;
+      }
+
+      .设备行 + .设备行 {
+        margin-top: 6px;
+      }
+
+      .设备行:hover {
+        border-color: var(--线);
+      }
+
+      .设备行.在线 {
+        border-color: color-mix(in srgb, var(--强调, #f5a524) 40%, var(--线-弱));
+      }
+
+      .状态点 {
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        background: var(--字-弱);
+        flex: none;
+      }
+
+      .设备行.在线 .状态点 {
+        background: var(--绿, #4ade80);
+        box-shadow: 0 0 6px color-mix(in srgb, var(--绿, #4ade80) 60%, transparent);
+      }
+
+      .设备主体 {
+        flex: 1;
+        min-width: 0;
+      }
+
+      .设备名 {
+        font-size: 13px;
+        color: var(--字-主);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      .设备副 {
+        font-size: 11px;
+        color: var(--字-弱);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      .行操作 {
+        display: flex;
+        gap: 6px;
+        flex: none;
+      }
+
+      .小按钮 {
+        border: 1px solid var(--线);
+        background: transparent;
+        color: var(--字-次);
+        border-radius: 6px;
+        padding: 4px 10px;
+        font-size: 11.5px;
+        cursor: pointer;
+      }
+
+      .小按钮:hover {
+        background: var(--底-2);
+        color: var(--字-主);
+      }
+
+      .小按钮.主 {
+        background: color-mix(in srgb, var(--强调, #f5a524) 18%, transparent);
+        border-color: color-mix(in srgb, var(--强调, #f5a524) 45%, transparent);
+        color: var(--强调, #f5a524);
+      }
+
+      .小按钮.危险:hover {
+        background: #c42b1c;
+        border-color: #c42b1c;
+        color: #fff;
+      }
+
+      /* 下拉菜单 */
+      .下拉容器 {
+        position: relative;
+      }
+
+      .下拉菜单 {
+        position: absolute;
+        right: 0;
+        top: calc(100% + 4px);
+        min-width: 130px;
+        padding: 4px;
+        border-radius: 8px;
+        border: 1px solid var(--线);
+        background: var(--底-2);
+        box-shadow: 0 12px 32px -12px rgba(0, 0, 0, 0.8);
+        z-index: 20;
+      }
+
+      .下拉菜单[hidden] {
+        display: none;
+      }
+
+      .下拉项 {
+        padding: 6px 10px;
+        border-radius: 5px;
+        font-size: 12px;
+        color: var(--字-次);
+        cursor: pointer;
+        white-space: nowrap;
+      }
+
+      .下拉项:hover {
+        background: var(--底-3, var(--底-2));
+        color: var(--字-主);
+      }
+
+      .下拉项.危险:hover {
+        background: #c42b1c;
+        color: #fff;
+      }
+
+      /* 空态 */
+      .空态 {
+        padding: 24px;
+        text-align: center;
+        font-size: 12px;
+        color: var(--字-弱);
+        border-radius: 10px;
+        border: 1px dashed var(--线-弱);
+      }
+
+      /* 底部提示 */
+      .底部提示 {
+        flex: none;
+        font-size: 11.5px;
+        color: var(--字-弱);
+        min-height: 18px;
+      }
+
+      .底部提示.错误 {
+        color: #ff9aa2;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="设备页">
+      <div class="顶部条">
+        <h1>设备管理</h1>
+        <span class="统计" id="统计"></span>
+        <div class="右">
+          <button class="按钮 主" id="全部重连">全部重连</button>
+          <button class="按钮" id="刷新">刷新</button>
+        </div>
+      </div>
+
+      <div class="列表区">
+        <div>
+          <div class="分组标题">
+            <span>在线设备</span>
+            <span class="数量" id="在线数量">0</span>
+          </div>
+          <div id="在线列表"></div>
+        </div>
+
+        <div>
+          <div class="分组标题">
+            <span>已保存的离线设备</span>
+            <span class="数量" id="离线数量">0</span>
+          </div>
+          <div id="离线列表"></div>
+        </div>
+      </div>
+
+      <div class="底部提示" id="底部提示"></div>
+    </div>
+
+    <script type="module" src="./js/devices.js"></script>
+  </body>
+</html>

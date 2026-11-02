@@ -444,7 +444,14 @@ async function 执行更新(产物, 上报 = () => {}) {
     if (产物.类型 === '安装版') {
       上报({ 阶段: '安装' });
       // 安装器自己处理"关闭旧版本 → 覆盖 → 启动"，不需要我们插手
-      const 子进程 = spawn(目标, ['/currentuser'], { detached: true, stdio: 'ignore' });
+      // NSIS 版认 /currentuser；Inno Setup 不认识这个参数，会直接忽略，
+      // 所以两种安装器用同一个参数也能工作：
+      //   - /currentuser 被 Inno 忽略 → 走它自己的静默判定
+      //   - 加上 /SILENT 让 Inno 无人值守安装（NSIS 会忽略大写 /SILENT）
+      const 子进程 = spawn(目标, ['/currentuser', '/SILENT', '/SUPPRESSMSGBOXES', '/NORESTART'], {
+        detached: true,
+        stdio: 'ignore',
+      });
       子进程.unref();
       return { 方式: '安装版', 已启动安装器: true };
     }

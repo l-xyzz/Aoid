@@ -120,6 +120,248 @@
         background: var(--底-2);
       }
 
+      /* 单击选中的文件行，给个明显底色，避免用户以为没选中 */
+      .工具行.选中 {
+        background: var(--底-3, rgba(245, 165, 36, 0.16));
+        box-shadow: inset 2px 0 0 var(--强调);
+      }
+
+      /* 文件行上的操作按钮默认淡出，悬停整行才显出来，免得每行挂一堆按钮很挤 */
+      /* ---------- 文件管理双栏 ---------- */
+      .文件双栏 {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+        flex: 1 1 auto;
+        min-height: 0;
+      }
+
+      .文件栏 {
+        display: flex;
+        flex-direction: column;
+        min-height: 0;
+        background: var(--底-1);
+        border: 1px solid var(--线);
+        border-radius: 8px;
+        overflow: hidden;
+      }
+
+      .文件栏头 {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 10px;
+        border-bottom: 1px solid var(--线);
+      }
+
+      .文件栏标 {
+        font-weight: 600;
+        font-size: 12.5px;
+        white-space: nowrap;
+      }
+
+      .文件栏路径 {
+        font-size: 11.5px;
+        color: var(--字-次);
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        flex: 1 1 auto;
+      }
+
+      .文件工具条 {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        padding: 5px 8px;
+        border-bottom: 1px solid var(--线);
+        flex-wrap: wrap;
+      }
+
+      .文件工具条 .次级按钮,
+      .文件工具条 .次要按钮 {
+        padding: 2px 8px;
+        font-size: 11.5px;
+      }
+
+      .主按钮 {
+        padding: 6px 16px;
+        border: 1px solid var(--强调);
+        border-radius: 6px;
+        background: var(--强调);
+        color: #0b0d10;
+        font-weight: 600;
+        font-size: 12.5px;
+        cursor: pointer;
+      }
+
+      .主按钮:hover { filter: brightness(1.08); }
+
+      .图标按钮 {
+        width: 24px;
+        height: 24px;
+        padding: 0;
+        border: 1px solid var(--线);
+        border-radius: 5px;
+        background: var(--底-2);
+        color: var(--字);
+        cursor: pointer;
+        font-size: 13px;
+        line-height: 1;
+      }
+
+      .图标按钮:hover { background: var(--底-3, #34343a); }
+
+      .工具条分隔 {
+        width: 1px;
+        height: 16px;
+        background: var(--线);
+        margin: 0 3px;
+      }
+
+      .文件表头 {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 5px 10px;
+        font-size: 11px;
+        color: var(--字-次);
+        border-bottom: 1px solid var(--线);
+      }
+
+      .多选格 { width: 14px; flex: none; }
+      .列名 { flex: 1 1 auto; }
+      .列型 { width: 52px; flex: none; }
+      .列大 { width: 68px; flex: none; text-align: right; }
+
+      .文件栏列表 {
+        flex: 1 1 auto;
+        min-height: 0;
+        overflow-y: auto;
+        padding: 4px;
+      }
+
+      .文件栏脚 {
+        padding: 4px 10px;
+        font-size: 11px;
+        color: var(--字-次);
+        border-top: 1px solid var(--线);
+      }
+
+      /* 文件行：勾选框 + 名称 + 类型 + 大小 */
+      .文件行 {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 5px 6px;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 12px;
+      }
+
+      .文件行:hover { background: var(--底-2); }
+
+      .文件行.已选 {
+        background: rgba(245, 165, 36, 0.18);
+      }
+
+      .文件行 input[type='checkbox'] {
+        width: 14px;
+        height: 14px;
+        flex: none;
+        accent-color: var(--强调);
+      }
+
+      .文件行 .名字 {
+        flex: 1 1 auto;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .文件行 .类型,
+      .文件行 .尺寸 {
+        font-size: 11px;
+        color: var(--字-次);
+        flex: none;
+      }
+
+      .文件行 .类型 { width: 52px; }
+      .文件行 .尺寸 { width: 68px; text-align: right; }
+
+      /* 传输队列 */
+      .传输区 {
+        margin-top: 10px;
+        border: 1px solid var(--线);
+        border-radius: 8px;
+        background: var(--底-1);
+        display: flex;
+        flex-direction: column;
+        max-height: 168px;
+        flex: none;
+      }
+
+      .传输头 {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 7px 10px;
+        border-bottom: 1px solid var(--线);
+        font-size: 12px;
+        font-weight: 600;
+      }
+
+      .传输提示 {
+        font-size: 11.5px;
+        color: var(--字-次);
+        font-weight: 400;
+      }
+
+      .传输列表 {
+        flex: 1 1 auto;
+        min-height: 0;
+        overflow-y: auto;
+        padding: 4px 6px;
+        font-size: 11.5px;
+      }
+
+      .传输项 {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 4px 4px;
+        border-bottom: 1px solid var(--线);
+      }
+
+      .传输项:last-child { border-bottom: none; }
+
+      .传输项 .名 {
+        flex: 1 1 auto;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .传输项 .态 {
+        flex: none;
+        width: 84px;
+        text-align: right;
+        color: var(--字-次);
+      }
+
+      .传输项 .态.成功 { color: #4ec97a; }
+      .传输项 .态.失败 { color: #f26d6d; }
+
+      .工具行 .文字按钮 {
+        opacity: 0;
+        transition: opacity 0.12s;
+      }
+
+      .工具行:hover .文字按钮,
+      .工具行.选中 .文字按钮 {
+        opacity: 1;
+      }
+
       .工具行 .主文 {
         flex: 1;
         min-width: 0;
@@ -328,6 +570,77 @@
         color: var(--字-弱);
         font-size: 12px;
       }
+
+      /* ===== 外设（摄像头/麦克风）卡片样式，从 features.html 并入 ===== */
+      .外设内容 {
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+        padding: 4px 2px;
+      }
+
+      .外设状态行 {
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+      }
+
+      .外设状态 {
+        font-size: 11.5px;
+        color: var(--字-弱);
+      }
+
+      .卡片 {
+        border-radius: 12px;
+        border: 1px solid var(--线-弱);
+        background: var(--底-2);
+        padding: 14px;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+
+      .卡片 h2 {
+        margin: 0;
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--字-主);
+      }
+
+      .卡片说明 {
+        margin: 0;
+        font-size: 11.5px;
+        line-height: 1.65;
+        color: var(--字-弱);
+      }
+
+      .行 {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+      }
+
+      .行 > label {
+        flex: 1;
+        min-width: 130px;
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+        font-size: 11px;
+        color: var(--字-弱);
+      }
+
+      .按钮行 {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+      }
+
+      .按钮行 .按钮 {
+        flex: 1;
+        min-width: 120px;
+      }
+
     </style>
   </head>
   <body>
@@ -362,13 +675,10 @@
           </svg>
           外设
         </button>
-        <button class="工具菜单项" data-页="控制台">
-          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4">
-            <rect x="2" y="3" width="12" height="10" rx="1.5" />
-            <path d="M4.5 6.5l2 1.8-2 1.8M8.5 10.5h3" stroke-linecap="round" stroke-linejoin="round" />
-          </svg>
-          ADB 控制台
-        </button>
+        <!--
+          ADB 控制台已移出「更多功能」，改为主界面上的独立窗口按钮。
+          控制台是常驻工具，塞在标签页里每次都要切页，体验不好。
+        -->
       </nav>
 
       <!-- 右侧内容 -->
@@ -396,48 +706,151 @@
           <div class="工具列表" id="进程列表"></div>
         </section>
 
-        <!-- 文件管理 -->
+        <!-- 文件管理：双栏 + 多选 + 传输队列 -->
         <section class="工具体" data-体="文件" hidden style="overflow: hidden">
           <div class="文件双栏">
+            <!-- 手机栏 -->
             <div class="文件栏">
               <div class="文件栏头">
-                <span>📱 手机</span>
+                <span class="文件栏标">📱 手机</span>
                 <span class="文件栏路径" id="手机路径">/sdcard</span>
-                <button class="文字按钮" id="手机上级">上级</button>
+              </div>
+              <div class="文件工具条">
+                <button class="图标按钮" id="手机上级" title="上一级">↑</button>
+                <button class="图标按钮" id="手机刷新" title="刷新">⟳</button>
+                <span class="工具条分隔"></span>
+                <button class="次级按钮" id="手机全选">全选</button>
+                <button class="次级按钮" id="手机复制">复制</button>
+                <button class="次级按钮" id="手机粘贴">粘贴</button>
+                <button class="次级按钮" id="手机重命名">重命名</button>
+                <button class="次要按钮" id="手机删除">删除</button>
+                <span class="间隔"></span>
+                <button class="次要按钮" id="手机发送">发送 →</button>
+              </div>
+              <div class="文件表头">
+                <span class="多选格"></span>
+                <span class="列名">名称</span>
+                <span class="列型">类型</span>
+                <span class="列大">大小</span>
               </div>
               <div class="文件栏列表" id="手机文件"></div>
+              <div class="文件栏脚" id="手机统计">0 项</div>
             </div>
+
+            <!-- 电脑栏 -->
             <div class="文件栏">
               <div class="文件栏头">
-                <span>💻 电脑</span>
-                <span class="文件栏路径" id="电脑路径">—</span>
-                <button class="文字按钮" id="电脑上级">上级</button>
+                <span class="文件栏标">💻 本机</span>
+                <span class="文件栏路径" id="电脑路径">此电脑</span>
+              </div>
+              <div class="文件工具条">
+                <button class="图标按钮" id="电脑上级" title="上一级">↑</button>
+                <button class="图标按钮" id="电脑刷新" title="刷新">⟳</button>
+                <button class="图标按钮" id="电脑盘符" title="选择磁盘">💽</button>
+                <span class="工具条分隔"></span>
+                <button class="次级按钮" id="电脑全选">全选</button>
+                <button class="次级按钮" id="电脑复制">复制</button>
+                <button class="次级按钮" id="电脑粘贴">粘贴</button>
+                <button class="次级按钮" id="电脑重命名">重命名</button>
+                <button class="次要按钮" id="电脑删除">删除</button>
+                <span class="间隔"></span>
+                <button class="次要按钮" id="电脑接收">← 接收</button>
+              </div>
+              <div class="文件表头">
+                <span class="多选格"></span>
+                <span class="列名">名称</span>
+                <span class="列型">类型</span>
+                <span class="列大">大小</span>
               </div>
               <div class="文件栏列表" id="电脑文件"></div>
+              <div class="文件栏脚" id="电脑统计">0 项</div>
             </div>
+          </div>
+
+          <!-- 传输队列 -->
+          <div class="传输区">
+            <div class="传输头">
+              <span>传输列表</span>
+              <span class="间隔"></span>
+              <span class="传输提示" id="传输提示"></span>
+            </div>
+            <div class="传输列表" id="传输列表"></div>
           </div>
         </section>
 
-        <!--
-          外设
-          
-          不能用 iframe 加载 features.html：iframe 里的页面拿不到 preload，
-          window.deck 是 undefined，一进去就报
-          "Cannot read properties of undefined (reading '更多')"。
-          
-          改成从这里按钮调起独立的外设窗口——那边是真正的 BrowserWindow，
-          preload 正常注入，摄像头和麦克风都能用。
-        -->
+        <!-- 外设：摄像头 / 麦克风（原独立窗口，现并入本页） -->
         <section class="工具体" data-体="外设" hidden>
-          <div style="max-width: 560px">
-            <h3 style="margin: 0 0 8px; font-size: 13px">把手机当作摄像头和麦克风</h3>
-            <p style="margin: 0 0 14px; color: var(--字-次); line-height: 1.8">
-              外设功能会打开一个独立窗口：手机摄像头可以实时显示，供会议软件、
-              直播工具通过窗口捕获使用；手机麦克风则可以替代电脑的麦克风。
-            </p>
-            <button class="主按钮" id="打开外设窗口">打开外设窗口</button>
-            <p style="margin: 14px 0 0; color: var(--字-弱); font-size: 11px; line-height: 1.7">
-              需要手机已连接。摄像头预览与麦克风采集都在那个窗口里控制。
+          <div class="外设内容">
+            <div class="外设状态行">
+              <span class="外设状态" id="连接状态">未连接设备</span>
+            </div>
+
+            <section class="卡片">
+              <h2>把手机当作摄像头</h2>
+              <p class="卡片说明">
+                打开后手机摄像头会在一张独立小窗里实时显示。
+                其他软件（会议、直播工具）可以通过窗口捕获使用这个画面。
+              </p>
+
+              <div class="行">
+                <label>
+                  摄像头
+                  <select class="选择框" id="摄像头选择">
+                    <option value="">连接后加载…</option>
+                  </select>
+                </label>
+                <label>
+                  分辨率
+                  <select class="选择框" id="摄像头尺寸">
+                    <option value="1280x720">1280 × 720</option>
+                    <option value="1920x1080">1920 × 1080</option>
+                    <option value="640x480">640 × 480</option>
+                  </select>
+                </label>
+                <label>
+                  帧率
+                  <select class="选择框" id="摄像头帧率">
+                    <option value="30">30 fps</option>
+                    <option value="60">60 fps</option>
+                    <option value="15">15 fps</option>
+                  </select>
+                </label>
+              </div>
+
+              <!--
+                用 div 而不是 label：label 只要点内部任何位置都会切换复选框，
+                用户点文字时就误触了。改成 div 后只有点开关本身才切换。
+              -->
+              <div class="开关项">
+                <span class="开关项文字">
+                  <span class="开关项名">同时使用手机麦克风</span>
+                  <span class="开关项注">手机采到的声音会送到电脑播放</span>
+                </span>
+                <span class="开关">
+                  <input type="checkbox" id="使用麦克风" />
+                  <span class="开关块"></span>
+                </span>
+              </div>
+
+              <div class="按钮行">
+                <button class="按钮 主" id="打开摄像头">打开摄像头预览</button>
+                <button class="按钮" id="关闭摄像头" disabled>停止</button>
+              </div>
+            </section>
+
+            <section class="卡片">
+              <h2>把手机当作麦克风</h2>
+              <p class="卡片说明">
+                单独把手机麦克风接到电脑。适合手机离你更近、或电脑没有麦克风的情况。
+              </p>
+              <div class="按钮行">
+                <button class="按钮" id="打开麦克风">开始使用手机麦克风</button>
+                <button class="按钮" id="关闭麦克风" disabled>停止</button>
+              </div>
+            </section>
+
+            <p class="卡片说明" id="外设提示">
+              提示：摄像头与麦克风是两条独立通道，可以只开其中一个。
             </p>
           </div>
         </section>
