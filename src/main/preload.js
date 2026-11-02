@@ -6,7 +6,7 @@
  */
 'use strict';
 
-const { contextBridge, ipcRenderer } = require('electron');
+const { contextBridge, ipcRenderer, webUtils } = require('electron');
 
 /** 订阅事件并返回取消订阅函数 */
 function 订阅(频道, 回调) {
@@ -23,6 +23,21 @@ contextBridge.exposeInMainWorld('deck', {
   /* ---- 日志（渲染进程错误落盘，便于无 CDP 时排查） ---- */
   日志: {
     渲染错误: (列表) => ipcRenderer.invoke('日志:渲染错误', { 列表 }),
+  },
+
+  /* ---- 从界面拖进来的文件 ---- */
+  文件: {
+    /*
+     * Electron 32 起 File.path 被移除，必须用 webUtils.getPathForFile。
+     * 它只能在 preload 里调用，界面侧拿不到。
+     */
+    取路径: (file) => {
+      try {
+        return webUtils.getPathForFile(file) || '';
+      } catch {
+        return '';
+      }
+    },
   },
 
   /* ---- 多语言 ---- */

@@ -318,11 +318,61 @@ class Adb {
     return this.#执行(this.adbPath, ['-s', 序列号, 'shell', 命令], { timeout: 15000, ...选项 });
   }
 
+  /**
+   * 让媒体库立刻认到刚推上去的文件。
+   *
+   * adb push 是直接写文件系统的，不会通知 MediaStore——所以相册、文件管理
+   * 要等系统自己扫到（或者重启）才看得见，用户会以为没传成功。
+   * 实测 Android 10 上这条广播有效：广播前后 `content query` 从
+   * 「No result found」变成能查到该文件。
+   */
+  async #通知媒体库(序列号, 设备全路径) {
+    await this.设备shell(
+      序列号,
+      `am broadcast -a android.intent.action.MEDIA_SCANNER_SCAN_FILE -d "file://${设备全路径}"`,
+      { timeout: 8000 },
+    ).catch(() => {});
+  }
+
   /** 推送文件到设备 */
   async 推送(序列号, 本地路径, 设备路径) {
-    return this.#执行(this.adbPath, ['-s', 序列号, 'push', 本地路径, 设备路径], {
+    const 文件名 = path.basename(本地路径);
+    const 是目录 = /[\\/]$/.test(设备路径);
+
+    /*
+     * adb 在 Windows 上碰到非 ASCII 文件名会翻车：实测
+     *   push "中文名测试.txt" /sdcard/Download/
+     * 会被它算成目标 `/sdcard/Download/.`，然后报
+     *   remote couldn't create file: Is a directory
+     * （同一个文件改成英文名就完全正常）。
+     *
+     * 所以中文名先推到 ASCII 临时名，再在设备上 mv 回真名——设备端 shell
+     * 是 UTF-8，中文名没问题。
+     */
+    if (!/[^\x00-\x7F]/.test(文件名)) {
+      const 结果 = await this.#执行(this.adbPath, ['-s', 序列号, 'push', 本地路径, 设备路径], {
+        timeout: 60000,
+      });
+      const 全路径 = 是目录
+        ? `${设备路径.replace(/[\\/]+$/, '')}/${文件名}`
+        : 设备路径;
+      await this.#通知媒体库(序列号, 全路径);
+      return 结果;
+    }
+
+    const 目标目录 = 是目录 ? 设备路径.replace(/[\\/]+$/, '') : path.posix.dirname(设备路径);
+    const 目标名 = 是目录 ? 文件名 : path.posix.basename(设备路径);
+    const 临时名 = `.aoid_${Date.now().toString(36)}${path.extname(本地路径) || ''}`;
+    const 转义 = (s) => s.replace(/"/g, '\\"');
+
+    await this.#执行(this.adbPath, ['-s', 序列号, 'push', 本地路径, `${目标目录}/${临时名}`], {
       timeout: 60000,
     });
+    await this.设备shell(序列号, `mv "${转义(目标目录)}/${临时名}" "${转义(目标目录)}/${转义(目标名)}"`, {
+      timeout: 15000,
+    });
+    await this.#通知媒体库(序列号, `${目标目录}/${目标名}`);
+    return { stdout: '', stderr: '' };
   }
 
   /** 从设备拉文件到电脑 */
@@ -340,31 +390,57 @@ class Adb {
    * 用 ls -la 一次拿全部条目，比逐个 stat 快得多。
    */
   async 列出路径(序列号, 目录) {
-    const 目标 = 目录 || '/sdcard';
-    const { stdout } = await this.设备shell(序列号, `ls -la "${目标}" 2>/dev/null`, {
-      timeout: 15000,
-    });
+    const 规范化 = (p) => (p || '/sdcard').replace(/\/+$/, '') || '/';
+    let 目标 = 规范化(目录);
+    let 提示 = '';
 
-    const 条目 = [];
-    for (const 行 of stdout.split(/\r?\n/)) {
-      const 修剪 = 行.trim();
-      if (!修剪 || 修剪.startsWith('total ')) continue;
-
-      // -rw-rw---- 1 u0_a123 media_rw 1234 2024-05-01 12:00 文件名
-      const 匹配 = /^([dl-])[rwxsStT-]{9}\s+\d+\s+\S+\s+\S+\s+(\d+)\s+(\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2})\s+(.+)$/.exec(修剪);
-      if (!匹配) continue;
-
-      const 原始名 = 匹配[4];
-      if (原始名 === '.' || 原始名 === '..') continue;
-      // 符号链接形如 name -> target，只取名字
-      const 名称 = 原始名.includes(' -> ') ? 原始名.split(' -> ')[0] : 原始名;
-
-      条目.push({
-        名称,
-        是否目录: 匹配[1] === 'd',
-        字节: Number(匹配[2]) || 0,
-        修改时间: 匹配[3],
+    /*
+     * -L 是必须的：`/sdcard` 是一条指向 `/storage/self/primary` 的符号链接，
+     * 不带 -L 时 `ls -la /sdcard` 只回一行链接本身，目录内容是空的——界面
+     * 看着就是「读取失败 / 空目录」（Android 10 实测）。
+     */
+    const 列一次 = async (路径) => {
+      const { stdout } = await this.设备shell(序列号, `ls -laL "${路径}" 2>/dev/null`, {
+        timeout: 15000,
       });
+
+      const 条目 = [];
+      for (const 行 of stdout.split(/\r?\n/)) {
+        const 修剪 = 行.trim();
+        if (!修剪 || 修剪.startsWith('total ')) continue;
+
+        // -rw-rw---- 1 u0_a123 media_rw 1234 2024-05-01 12:00 文件名
+        const 匹配 = /^([dl-])[rwxsStT-]{9}\s+\d+\s+\S+\s+\S+\s+(\d+)\s+(\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2})\s+(.+)$/.exec(修剪);
+        if (!匹配) continue;
+
+        const 原始名 = 匹配[4];
+        if (原始名 === '.' || 原始名 === '..') continue;
+        // 符号链接形如 name -> target，只取名字
+        const 名称 = 原始名.includes(' -> ') ? 原始名.split(' -> ')[0] : 原始名;
+
+        条目.push({
+          名称,
+          是否目录: 匹配[1] === 'd',
+          字节: Number(匹配[2]) || 0,
+          修改时间: 匹配[3],
+        });
+      }
+      return 条目;
+    };
+
+    let 条目;
+    try {
+      条目 = await 列一次(目标);
+    } catch (错误) {
+      // 上次记住的目录可能已经被删或改名，回落到 /sdcard，而不是直接甩一句
+      // 「命令失败（退出码 1）」——那句话对用户没有任何信息量。
+      if (目标 !== '/sdcard') {
+        提示 = `${目标} 打不开，已回到 /sdcard`;
+        目标 = '/sdcard';
+        条目 = await 列一次(目标);
+      } else {
+        throw 错误;
+      }
     }
 
     // 目录在前，同类按名称排序
@@ -373,7 +449,7 @@ class Adb {
       return a.名称.localeCompare(b.名称, 'zh');
     });
 
-    return { 目录: 目标, 条目 };
+    return { 目录: 目标, 条目, 提示 };
   }
 
   /** 删除设备上的文件（支持递归） */
@@ -529,7 +605,15 @@ class Adb {
           return;
         }
         if (退出码 !== 0) {
-          拒绝(new AdbError(标准错误.trim() || `命令失败（退出码 ${退出码}）`, { 退出码, 标准错误 }));
+          // stdout 也要看一眼：adb 有些失败只写在 stdout 里，只读 stderr 会
+          // 得到一句毫无信息量的「操作失败」。
+          const 详情 = 标准错误.trim() || 原始.toString('utf8').trim();
+          拒绝(
+            new AdbError(详情 || `命令失败（退出码 ${退出码}）：${参数.join(' ')}`, {
+              退出码,
+              标准错误,
+            }),
+          );
           return;
         }
         解析({

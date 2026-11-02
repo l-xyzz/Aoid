@@ -202,15 +202,15 @@ constructor({ adb, 序列号, 服务端jar, 最大边长 = 1024, 最大帧率 = 
       `video_bit_rate=${this.码率}`,
       'video_codec=h264',
       /*
-       * 编码器：用硬件编码器。
+       * 编码器：交给 scrcpy 自己挑（不传 video_encoder）。
        *
-       * 之前为规避横屏撕裂换成了软编 c2.android.avc.encoder，
-       * 但软编编码延迟明显更高，用户实测画面延迟大。
-       * 撕裂现在由「锁帧 + 后台重连 + 码流重对齐」兜住，不必再靠软编。
+       * 这里原来写死了 video_encoder=c2.qti.avc.encoder —— 那是高通新平台
+       * （Android 11+ 机型）上的编码器名。在 Android 10 及一批老机型上它根本
+       * 不存在，服务端会直接 'Video encoder ... for h264 not found' 然后退出，
+       * 界面表现成「连接失败」，且没有任何可见报错。
+       * 不传时 scrcpy 会按设备实际支持的编码器自己选（优先硬件），
+       * 实测 Android 10（Redmi M2007J17C）用 OMX.qcom.video.encoder.avc 正常。
        */
-      'video_encoder=c2.qti.avc.encoder',
-      // 关键帧间隔 1 秒：间隔越短，出错后恢复越快，代价是码率略升
-      'i_frame_interval=1',
       /*
        * 关闭 B 帧并开实时优先。
        *

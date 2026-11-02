@@ -819,8 +819,43 @@ body.沉浸中 .触控层 {
   flex-direction: column;
   min-width: 0;
   min-height: 0;
+  position: relative; /* 拖放遮罩的定位基准 */
   background: radial-gradient(80% 60% at 50% 40%, rgba(127, 127, 127, 0.05), transparent 70%),
     var(--底-0);
+}
+
+/* ---------- 拖文件进来传手机 ---------- */
+.拖放遮罩 {
+  position: absolute;
+  inset: 8px;
+  z-index: 40;
+  display: grid;
+  place-items: center;
+  background: rgba(0, 0, 0, 0.55);
+  border: 2px dashed rgba(120, 180, 255, 0.85);
+  border-radius: 12px;
+  /* 关键：不能吃掉 drag/drop 事件，否则拖到遮罩上就断了 */
+  pointer-events: none;
+}
+
+.拖放遮罩[hidden] {
+  display: none;
+}
+
+.拖放说明 {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  align-items: center;
+  color: #fff;
+  font-size: 15px;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.6);
+}
+
+.拖放说明 span {
+  font-size: 12px;
+  opacity: 0.75;
+  font-family: ui-monospace, Consolas, monospace;
 }
 
 .舞台 {
