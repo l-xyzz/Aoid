@@ -1,7 +1,7 @@
 {
   "name": "aoid",
   "productName": "Aoid",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "轻量的 Windows 电脑控制手机工具，基于 scrcpy 服务端。实时画面、跟手触控、中文输入、无线调试。",
   "license": "MIT",
   "author": "l-xyzz",

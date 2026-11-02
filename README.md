@@ -191,6 +191,29 @@ vendor/           scrcpy 服务端 jar
 
 觉得有用的话，欢迎点个 Star，也欢迎提 Issue 说说你的使用体验。
 
+## 致谢
+
+### 贡献者
+
+感谢以下朋友对 Aoid 的代码贡献：
+
+| 贡献者 | 贡献内容 |
+| --- | --- |
+| [@9Y6-lab](https://github.com/9Y6-lab) | 修复 Android 10 及部分老机型的连接与文件管理问题（编码器写死、`ls` 未穿透符号链接、中文文件名推送失败），新增拖文件直接传到手机与媒体库扫描。见 [PR #1](https://github.com/l-xyzz/Aoid/pull/1) |
+
+### 问题反馈
+
+感谢所有提 Issue、在评论区反馈使用问题的朋友。很多 bug 是在真实设备上才暴露出来的——
+比如 Android 10 老机型上服务端因为编码器名不存在而静默退出，这类问题只有在你们的机器上才能被发现。
+
+### 上游项目
+
+Aoid 建立在这些优秀的开源项目之上，没有它们就没有这个软件：
+
+- **[scrcpy](https://github.com/Genymobile/scrcpy)** —— 整个方案的地基。画面采集、编码、输入注入全部由它的服务端完成，Aoid 只是给它套了一个界面。
+- **[QtScrcpy](https://github.com/barry-ran/QtScrcpy)** —— 架构思路的参考（未使用任何代码）。
+- **[Escrcpy](https://github.com/viarotel-org/escrcpy)** —— 在多设备管理、拖拽交互、独立窗口等产品形态上提供了很好的参考。
+
 ## 关于第三方组件
 
 | 组件 | 用途 | 许可 |
